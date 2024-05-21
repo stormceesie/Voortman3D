@@ -56,7 +56,15 @@ namespace Voortman3D {
 	}
 
 	void Voortman3DCore::initVulkan() {
+#ifdef _DEBUG
+		STARTCOUNTER("Initializing Vulkan")
+#endif
 
+		// Initialize Vulkan
+
+#ifdef _DEBUG
+		STOPCOUNTER()
+#endif
 	}
 
 	void Voortman3DCore::setupWindow(WNDPROC WndProc) {
@@ -66,11 +74,18 @@ namespace Voortman3D {
 	}
 
 	void Voortman3DCore::prepare() {
+#ifdef _DEBUG
+		STARTCOUNTER("Final Preperations")
+#endif
 
+		// Prepare...
+
+#ifdef _DEBUG
+		STOPCOUNTER()
+#endif
 	}
 
 	void Voortman3DCore::renderLoop() {
-
 		MSG msg;
 		bool quitMessageReceived = false;
 		while (!quitMessageReceived) {

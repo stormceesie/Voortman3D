@@ -67,6 +67,19 @@ namespace Voortman3D {
 	};
 }
 
+// Easy function to start a timer to see how long a process takes.
+#define STARTCOUNTER(processName)											\
+std::chrono::time_point<std::chrono::high_resolution_clock> start, end;		\
+start = std::chrono::high_resolution_clock::now();							\
+std::cout << processName << "..." << std::endl;								\
+const std::string& name = processName;										\
+
+// Easy function to stop the timer and to show the result in the console.
+#define STOPCOUNTER()														\
+end = std::chrono::high_resolution_clock::now();							\
+std::chrono::duration<double> elapsed_time = end - start;					\
+std::cout << name << " endured: " << elapsed_time << std::endl;				\
+																			
 #define VOORTMAN_3D_MAIN()																		  \
 Voortman3D::Voortman3D* voortman3D;																  \
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {					  \
