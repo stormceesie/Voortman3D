@@ -8,74 +8,61 @@
 namespace Voortman3D {
 	std::vector<const char*> Voortman3DCore::args;
 
-	Voortman3DCore::Voortman3DCore() {
+	Voortman3DCore::Voortman3DCore(HINSTANCE hInstance) : hInstance{hInstance} {
 
+		// Setup console if we are in debug mode
+#ifdef _DEBUG
+		setupConsole(L"Debug Console");
+#endif
+		setupDPIAwareness();
+	}
+
+	void Voortman3DCore::setupConsole(const std::wstring& title) {
+		AllocConsole();
+		AttachConsole(GetCurrentProcessId());
+
+		FILE* stream;
+		freopen_s(&stream, "CONIN$", "r", stdin);
+		freopen_s(&stream, "CONOUT$", "w+", stdout);
+		freopen_s(&stream, "CONOUT$", "w+", stderr);
+		// Enable flags so we can color the output
+		HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+		DWORD dwMode = 0;
+		GetConsoleMode(consoleHandle, &dwMode);
+		dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+		SetConsoleMode(consoleHandle, dwMode);
+		SetConsoleTitle(title.c_str());
+	}
+
+	void Voortman3DCore::setupDPIAwareness() {
+		typedef HRESULT* (__stdcall* SetProcessDpiAwarenessFunc)(PROCESS_DPI_AWARENESS);
+
+		HMODULE shCore = LoadLibraryA("Shcore.dll");
+		if (shCore)
+		{
+			SetProcessDpiAwarenessFunc setProcessDpiAwareness =
+				(SetProcessDpiAwarenessFunc)GetProcAddress(shCore, "SetProcessDpiAwareness");
+
+			if (setProcessDpiAwareness != nullptr)
+			{
+				setProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
+			}
+
+			FreeLibrary(shCore);
+		}
 	}
 
 	Voortman3DCore::~Voortman3DCore() {
-
 	}
 
 	void Voortman3DCore::initVulkan() {
 
 	}
 
-	void Voortman3DCore::setupWindow(HINSTANCE hInstance, WNDPROC WndProc) {
-		WNDCLASSEX wndClass;
-
-		wndClass.cbSize = sizeof(WNDCLASSEX);
-		wndClass.style = CS_HREDRAW | CS_VREDRAW;
-		wndClass.lpfnWndProc = WndProc;
-		wndClass.cbClsExtra = 0;
-		wndClass.cbWndExtra = 0;
-		wndClass.hInstance = hInstance;
-		wndClass.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-		wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-		wndClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-		wndClass.lpszMenuName = NULL;
-		wndClass.lpszClassName = name.c_str();
-		wndClass.hIconSm = LoadIcon(NULL, IDI_WINLOGO);
-
-		if (!RegisterClassEx(&wndClass))
-		{
-			std::cout << "Could not register window class!\n";
-			fflush(stdout);
-			exit(1);
-		}
-
-		DWORD dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
-		DWORD dwStyle = WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
-
-		RECT windowRect;
-		windowRect.left = 0L;
-		windowRect.top = 0L;
-		windowRect.right = (long)width;
-		windowRect.bottom = (long)height;
-
-		AdjustWindowRectEx(&windowRect, dwStyle, FALSE, dwExStyle);
-
-		hWnd = CreateWindowEx(0,
-			name.c_str(),
-			title.c_str(),
-			dwStyle | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
-			0,
-			0,
-			windowRect.right - windowRect.left,
-			windowRect.bottom - windowRect.top,
-			NULL,
-			NULL, 
-			hInstance,
-			NULL);
-
-		if (!hWnd) {
-			printf("Could not create a window!\n");
-			fflush(stdout);
-			return;
-		}
-
-		ShowWindow(hWnd, SW_SHOW);
-		SetForegroundWindow(hWnd);
-		SetFocus(hWnd);
+	void Voortman3DCore::setupWindow(WNDPROC WndProc) {
+		// If window doesn't exist create a new unique ptr
+		if (!window)
+			window = std::make_unique<Window>(hInstance, WndProc, icon, name, title, height, width);
 	}
 
 	void Voortman3DCore::prepare() {
@@ -99,6 +86,15 @@ namespace Voortman3D {
 	}
 
 	void Voortman3DCore::handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+		switch (uMsg) {
+		case WM_CLOSE:
+			DestroyWindow(window->window());
+			PostQuitMessage(0);
+			break;
 
+		case WM_PAINT:
+			ValidateRect(window->window(), NULL);
+			break;
+		}
 	}
 }

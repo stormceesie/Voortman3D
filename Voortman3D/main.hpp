@@ -1,10 +1,11 @@
 #pragma once
 #include "Voortman3DCore.hpp"
+#include "resource.h"
 
 namespace Voortman3D {
-	class Voortman3D : public Voortman3DCore {
+	class Voortman3D final : public Voortman3DCore {
 	public:
-		Voortman3D();
+		Voortman3D(HINSTANCE hInstance);
 	};
 }
 
