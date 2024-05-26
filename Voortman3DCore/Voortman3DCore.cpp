@@ -52,18 +52,221 @@ namespace Voortman3D {
 		}
 	}
 
+	char* Voortman3DCore::TO_CHAR(const wchar_t* string) {
+		size_t len = wcslen(string) + 1;
+		char* c_string = new char[len];
+		size_t numCharsRead;
+		wcstombs_s(&numCharsRead, c_string, len, string, _TRUNCATE);
+		return c_string;
+	}
+
+	VkResult Voortman3DCore::createInstance() {
+		VkApplicationInfo appInfo{};
+		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+		appInfo.pApplicationName = TO_CHAR(name.c_str());
+		appInfo.pEngineName = TO_CHAR(name.c_str());
+		appInfo.apiVersion = VK_VERSION_1_3;
+
+		std::vector<const char*> instanceExtensions = { VK_KHR_SURFACE_EXTENSION_NAME };
+
+		instanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+
+		uint32_t extCount = 0;
+
+		vkEnumerateInstanceExtensionProperties(nullptr, &extCount, nullptr);
+		if (extCount > 0) {
+			std::vector<VkExtensionProperties> extensions(extCount);
+			if (vkEnumerateInstanceExtensionProperties(nullptr, &extCount, &extensions.front()) == VK_SUCCESS) {
+				for (const VkExtensionProperties& extension : extensions) {
+					supportedInstanceExtensions.push_back(extension.extensionName);
+				}
+			}
+		}
+
+		if (enabledInstanceExtensions.size() > 0)
+		{
+			for (const char* enabledExtension : enabledInstanceExtensions)
+			{
+				// Output message if requested extension is not available
+				if (std::find(supportedInstanceExtensions.begin(), supportedInstanceExtensions.end(), enabledExtension) == supportedInstanceExtensions.end())
+				{
+					std::cerr << "Enabled instance extension \"" << enabledExtension << "\" is not present at instance level\n";
+				}
+				instanceExtensions.push_back(enabledExtension);
+			}
+		}
+
+		VkInstanceCreateInfo instanceCreateInfo = {};
+		instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+		instanceCreateInfo.pNext = NULL;
+		instanceCreateInfo.pApplicationInfo = &appInfo;
+
+#ifdef _DEBUG
+		if (std::find(supportedInstanceExtensions.begin(), supportedInstanceExtensions.end(), VK_EXT_DEBUG_UTILS_EXTENSION_NAME) != supportedInstanceExtensions.end()) {
+			instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+			std::cout << "Found Debug utils extension !" << std::endl;
+		}
+		else {
+			std::cerr << "Could not find 'VK_EXT_DEBUG_UTILS_EXTENSION_NAME' in supported extensions. Because of this the validation layers will be disables!" << std::endl;
+		}
+#endif
+
+		if (instanceExtensions.size() > 0) {
+			instanceCreateInfo.enabledExtensionCount = (uint32_t)instanceExtensions.size();
+			instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
+		}
+
+#ifdef _DEBUG
+		const char* validationLayerName = "VK_LAYER_KHRONOS_validation";
+
+		// Check if this layer is available at instance level
+		uint32_t instanceLayerCount;
+		vkEnumerateInstanceLayerProperties(&instanceLayerCount, nullptr);
+		std::vector<VkLayerProperties> instanceLayerProperties(instanceLayerCount);
+		vkEnumerateInstanceLayerProperties(&instanceLayerCount, instanceLayerProperties.data());
+		bool validationLayerPresent = false;
+		for (VkLayerProperties& layer : instanceLayerProperties) {
+			if (strcmp(layer.layerName, validationLayerName) == 0) {
+				validationLayerPresent = true;
+				break;
+			}
+		}
+		if (validationLayerPresent) {
+			instanceCreateInfo.ppEnabledLayerNames = &validationLayerName;
+			instanceCreateInfo.enabledLayerCount = 1;
+
+			std::cout << "Validation was enabled !" << std::endl;
+		}
+		else {
+			std::cerr << "Validation layer VK_LAYER_KHRONOS_validation not present, validation is disabled";
+		}
+#endif
+
+		VkResult result = vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
+
+		if (std::find(supportedInstanceExtensions.begin(), supportedInstanceExtensions.end(), VK_EXT_DEBUG_UTILS_EXTENSION_NAME) != supportedInstanceExtensions.end()) {
+			DebugUtils::setup(instance);
+		}
+
+		return result;
+	}
+
 	Voortman3DCore::~Voortman3DCore() {
+		swapChain.cleanup();
+
+		vkDestroySemaphore(device, semaphores.presentComplete, nullptr);
+		vkDestroySemaphore(device, semaphores.renderComplete, nullptr);
+
+		if (vulkanDevice)
+			delete vulkanDevice;
+
+#ifdef _DEBUG
+		Debug::freeDebugCallback(instance);
+#endif
+
+		if (instance)
+			vkDestroyInstance(instance, nullptr);
 	}
 
 	void Voortman3DCore::initVulkan() {
 #ifdef _DEBUG
-		STARTCOUNTER("Initializing Vulkan")
+		STARTCOUNTER("Initializing Vulkan");
 #endif
+		VkResult err;
 
-		// Initialize Vulkan
+		err = createInstance();
+
+		if (err) {
+			std::cerr << "Could not create Vulkan instance : " << Tools::errorString(err) << std::endl;
+			return;
+		}
 
 #ifdef _DEBUG
-		STOPCOUNTER()
+		Debug::setupDebugging(instance);
+#endif
+
+		uint32_t gpuCount = 0;
+
+		VK_CHECK_RESULT(vkEnumeratePhysicalDevices(instance, &gpuCount, nullptr));
+		if (gpuCount == 0) {
+			std::cerr << "No device with Vulkan support found" << std::endl;
+			return;
+		}
+
+		std::vector<VkPhysicalDevice> physicalDevices(gpuCount);
+		err = vkEnumeratePhysicalDevices(instance, &gpuCount, physicalDevices.data());
+
+		if (err) {
+			std::cerr << "Could not enumerate physical devices : \n" << Tools::errorString(err) << std::endl;
+			return;
+		}
+
+#ifdef _DEBUG
+		std::cout << "Available Vulkan devices" << "\n";
+		for (uint32_t i = 0; i < gpuCount; i++) {
+			VkPhysicalDeviceProperties deviceProperties;
+			vkGetPhysicalDeviceProperties(physicalDevices[i], &deviceProperties);
+			std::cout << "Device [" << i << "] : " << deviceProperties.deviceName << std::endl;
+			std::cout << " Type: " << Tools::physicalDeviceTypeString(deviceProperties.deviceType) << "\n";
+			std::cout << " API: " << (deviceProperties.apiVersion >> 22) << "." << ((deviceProperties.apiVersion >> 12) & 0x3ff) << "." << (deviceProperties.apiVersion & 0xfff) << "\n";
+		}
+
+		std::cout << "Selected device " << gpuCount - 1 << std::endl;
+#endif
+
+		// Select last GPU for now it is also possible to query for memory, speed etc
+		physicalDevice = physicalDevices[gpuCount - 1];
+
+		vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+		vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
+		vkGetPhysicalDeviceMemoryProperties(physicalDevice, &deviceMemoryProperties);
+
+		vulkanDevice = new VulkanDevice(physicalDevice);
+
+		VkResult res = vulkanDevice->createLogicalDevice(enabledFeatures, enabledInstanceExtensions, deviceCreatepNextChain);
+
+		if (res != VK_SUCCESS) {
+			std::cerr << "Could not create Vulkan Device : \n" + Tools::errorString(res) << std::endl;
+			return;
+		}
+
+		device = vulkanDevice->logicalDevice;
+
+		vkGetDeviceQueue(device, vulkanDevice->queueFamilyIndices.graphics, 0, &queue);
+
+		VkBool32 validFormat{ false };
+
+		validFormat = Tools::getSupportedDepthFormat(physicalDevice, &depthFormat);
+
+		assert(validFormat);
+
+		swapChain.connect(instance, physicalDevice, device);
+
+#ifdef _DEBUG
+		std::cout << "Swapchain is connected to the physical device!" << std::endl;
+#endif
+
+		// Create synchronization objects
+		VkSemaphoreCreateInfo semaphoreCreateInfo = Initializers::semaphoreCreateInfo();
+		// Create a semaphore used to synchronize image presentation
+		// Ensures that the image is displayed before we start submitting new commands to the queue
+		VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphores.presentComplete));
+		// Create a semaphore used to synchronize command submission
+		// Ensures that the image is not presented until all commands have been submitted and executed
+		VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphores.renderComplete));
+
+		// Set up submit info structure
+		// Semaphores will stay the same during application lifetime
+		// Command buffer submission info is set by each example
+		submitInfo = Initializers::submitInfo();
+		submitInfo.pWaitDstStageMask = &submitPipelineStages;
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = &semaphores.presentComplete;
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = &semaphores.renderComplete;
+
+#ifdef _DEBUG
+		STOPCOUNTER();
 #endif
 	}
 
@@ -73,15 +276,98 @@ namespace Voortman3D {
 			window = std::make_unique<Window>(hInstance, WndProc, icon, name, title, height, width);
 	}
 
+	void Voortman3DCore::initSwapchain() {
+		swapChain.initSurface(hInstance, window->window());
+	}
+
+	void Voortman3DCore::createCommandPool() {
+		VkCommandPoolCreateInfo cmdPoolInfo = {};
+		cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		cmdPoolInfo.queueFamilyIndex = swapChain.queueNodeIndex;
+		cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		VK_CHECK_RESULT(vkCreateCommandPool(device, &cmdPoolInfo, nullptr, &cmdPool));
+	}
+
+	void Voortman3DCore::setupSwapChain() {
+		swapChain.create(&width, &height, true, false);
+	}
+
+	void Voortman3DCore::createCommandBuffers() {
+		// Create one command buffer for each swap chain image and reuse for rendering
+		drawCmdBuffers.resize(swapChain.imageCount);
+
+		VkCommandBufferAllocateInfo cmdBufAllocateInfo =
+			Initializers::commandBufferAllocateInfo(
+				cmdPool,
+				VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+				static_cast<uint32_t>(drawCmdBuffers.size()));
+
+		VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, drawCmdBuffers.data()));
+	}
+
+	void Voortman3DCore::createSynchronizationPrimitives() {
+		// Wait fences to sync command buffer access
+		VkFenceCreateInfo fenceCreateInfo = Initializers::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
+		waitFences.resize(drawCmdBuffers.size());
+		for (auto& fence : waitFences) {
+			VK_CHECK_RESULT(vkCreateFence(device, &fenceCreateInfo, nullptr, &fence));
+		}
+	}
+
+	void Voortman3DCore::setupDepthStencil() {
+		VkImageCreateInfo imageCI{};
+		imageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		imageCI.imageType = VK_IMAGE_TYPE_2D;
+		imageCI.format = depthFormat;
+		imageCI.extent = { width, height, 1 };
+		imageCI.mipLevels = 1;
+		imageCI.arrayLayers = 1;
+		imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
+		imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
+		imageCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+		VK_CHECK_RESULT(vkCreateImage(device, &imageCI, nullptr, &depthStencil.image));
+		VkMemoryRequirements memReqs{};
+		vkGetImageMemoryRequirements(device, depthStencil.image, &memReqs);
+
+		VkMemoryAllocateInfo memAllloc{};
+		memAllloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		memAllloc.allocationSize = memReqs.size;
+		memAllloc.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		VK_CHECK_RESULT(vkAllocateMemory(device, &memAllloc, nullptr, &depthStencil.mem));
+		VK_CHECK_RESULT(vkBindImageMemory(device, depthStencil.image, depthStencil.mem, 0));
+
+		VkImageViewCreateInfo imageViewCI{};
+		imageViewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		imageViewCI.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		imageViewCI.image = depthStencil.image;
+		imageViewCI.format = depthFormat;
+		imageViewCI.subresourceRange.baseMipLevel = 0;
+		imageViewCI.subresourceRange.levelCount = 1;
+		imageViewCI.subresourceRange.baseArrayLayer = 0;
+		imageViewCI.subresourceRange.layerCount = 1;
+		imageViewCI.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+		// Stencil aspect should only be set on depth + stencil formats (VK_FORMAT_D16_UNORM_S8_UINT..VK_FORMAT_D32_SFLOAT_S8_UINT
+		if (depthFormat >= VK_FORMAT_D16_UNORM_S8_UINT) {
+			imageViewCI.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+		}
+		VK_CHECK_RESULT(vkCreateImageView(device, &imageViewCI, nullptr, &depthStencil.view));
+	}
+
 	void Voortman3DCore::prepare() {
 #ifdef _DEBUG
-		STARTCOUNTER("Final Preperations")
+		STARTCOUNTER("Final Preperations");
 #endif
 
-		// Prepare...
+		initSwapchain();
+		createCommandPool();
+		setupSwapChain();
+		createCommandBuffers();
+		createSynchronizationPrimitives();
+		setupDepthStencil();
 
 #ifdef _DEBUG
-		STOPCOUNTER()
+		STOPCOUNTER();
 #endif
 	}
 

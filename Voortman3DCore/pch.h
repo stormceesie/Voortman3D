@@ -18,7 +18,17 @@
 #include <string.h>
 #include <chrono>
 #include <vector>
+#include <cassert>
 #include <array>
 #include <iostream>
+#include <algorithm>
+#include <assert.h>
+#include <exception>
+#include <fstream>
+
+#include <glm.hpp>
+
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_win32.h>
 
 #endif //PCH_H

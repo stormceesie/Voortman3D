@@ -1,6 +1,11 @@
 #pragma once
 #include "pch.h"
 #include "Window.hpp"
+#include "Debug.hpp"
+#include "Tools.hpp"
+#include "VulkanDevice.hpp"
+#include "VulkanSwapChain.hpp"
+#include "Initializers.hpp"
 
 namespace Voortman3D {
 	class Voortman3DCore {
@@ -12,6 +17,20 @@ namespace Voortman3D {
 
 		uint32_t width = 1280;
 		uint32_t height = 720;
+
+		uint32_t destWidth;
+		uint32_t destHeight;
+		bool resizing = false;
+		void handleMouseMove(int32_t x, int32_t y);
+		void nextFrame();
+		void updateOverlay();
+		void createPipelineCache();
+		void createCommandPool();
+		void createSynchronizationPrimitives();
+		void initSwapchain();
+		void setupSwapChain();
+		void createCommandBuffers();
+		void destroyCommandBuffers();
 
 		/// <summary>
 		/// Constructor of the Voortman3DCore app
@@ -57,15 +76,74 @@ namespace Voortman3D {
 	protected:
 		HICON icon;
 
+		VkInstance instance;
+
+		VkPhysicalDevice physicalDevice;
+
+		VulkanDevice* vulkanDevice;
+
+		VkDevice device;
+
+		VulkanSwapChain swapChain;
+
+		VkSubmitInfo submitInfo;
+
+		VkQueue queue{ VK_NULL_HANDLE };
+
+		VkCommandPool cmdPool{ VK_NULL_HANDLE };
+
+		VkPipelineStageFlags submitPipelineStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+		VkFormat depthFormat;
+
+		std::vector<std::string> supportedInstanceExtensions;
+
+		std::vector<VkCommandBuffer> drawCmdBuffers;
+
+		std::vector<const char*> enabledInstanceExtensions;
+
+		VkPhysicalDeviceFeatures enabledFeatures{};
+
+		VkPhysicalDeviceProperties deviceProperties{};
+
+		VkPhysicalDeviceFeatures deviceFeatures{};
+
+		VkPhysicalDeviceMemoryProperties deviceMemoryProperties{};
+
+		struct {
+			VkImage image;
+			VkDeviceMemory mem;
+			VkImageView view;
+		} depthStencil;
+
+		struct {
+			VkSemaphore presentComplete;
+			VkSemaphore renderComplete;
+		} semaphores;
+
+		std::vector<VkFence> waitFences;
+
+		void* deviceCreatepNextChain = nullptr;
+
+		virtual VkResult createInstance();
+
+		virtual void setupDepthStencil();
+
 	private:
 		HINSTANCE hInstance;
 
 		std::unique_ptr<Window> window;
 
 		void setupDPIAwareness();
+
 		void setupConsole(const std::wstring& title);
+
+		static char* TO_CHAR(const wchar_t* string);
 	};
 }
+
+// Some easy macro's for easy reusable code
+#pragma region DefineFunctions
 
 // Easy function to start a timer to see how long a process takes.
 #define STARTCOUNTER(processName)											\
@@ -99,3 +177,5 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {								  \
 	delete(voortman3D);																			  \
 	return 0;																					  \
 }																								
+
+#pragma endregion
