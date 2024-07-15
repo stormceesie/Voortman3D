@@ -21,16 +21,16 @@ namespace Voortman3D {
 		extern bool errorModeSilent;
 
 		/** @brief Returns an error code as a string */
-		std::string errorString(VkResult errorCode);
+		_NODISCARD std::string errorString(VkResult errorCode);
 
 		/** @brief Returns the device type as a string */
-		std::string physicalDeviceTypeString(VkPhysicalDeviceType type);
+		_NODISCARD std::string physicalDeviceTypeString(VkPhysicalDeviceType type);
 
 		// Selected a suitable supported depth format starting with 32 bit down to 16 bit
 		// Returns false if none of the depth formats in the list is supported by the device
-		VkBool32 getSupportedDepthFormat(VkPhysicalDevice physicalDevice, VkFormat* depthFormat);
+		_NODISCARD VkBool32 getSupportedDepthFormat(VkPhysicalDevice physicalDevice, VkFormat* depthFormat);
 		// Same as getSupportedDepthFormat but will only select formats that also have stencil
-		VkBool32 getSupportedDepthStencilFormat(VkPhysicalDevice physicalDevice, VkFormat* depthStencilFormat);
+		_NODISCARD VkBool32 getSupportedDepthStencilFormat(VkPhysicalDevice physicalDevice, VkFormat* depthStencilFormat);
 
 		// Returns tru a given format support LINEAR filtering
 		VkBool32 formatIsFilterable(VkPhysicalDevice physicalDevice, VkFormat format, VkImageTiling tiling);
@@ -71,9 +71,18 @@ namespace Voortman3D {
 		VkShaderModule loadShader(const char* fileName, VkDevice device);
 
 		/** @brief Checks if a file exists */
-		bool fileExists(const std::string& filename);
+		_NODISCARD inline static bool fileExists(const std::string& filename);
 
-		uint32_t alignedSize(uint32_t value, uint32_t alignment);
-		VkDeviceSize alignedVkSize(VkDeviceSize value, VkDeviceSize alignment);
+		/// <summary>
+		/// Function to get the aligned size in any kind of integer.
+		/// </summary>
+		template<typename T>
+		_NODISCARD inline static 
+			typename std::enable_if<std::is_same<T, int16_t>::value ||
+			std::is_same<T, int32_t>::value ||
+			std::is_same<T, int64_t>::value, T>::type
+		alignedSize(const T value, const T alignment) noexcept {
+			return (value + alignment - 1) & ~(alignment - 1);
+		}
 	}
 }

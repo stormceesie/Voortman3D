@@ -6,6 +6,7 @@
 #include "VulkanDevice.hpp"
 #include "VulkanSwapChain.hpp"
 #include "Initializers.hpp"
+#include "Camera.hpp"
 
 namespace Voortman3D {
 	class Voortman3DCore {
@@ -20,10 +21,27 @@ namespace Voortman3D {
 
 		uint32_t destWidth;
 		uint32_t destHeight;
+		uint32_t frameCounter = 0;
+		uint32_t lastFPS = 0;
+
+		float frameTimer = 1.0f;
+
+		bool paused = false;
+
+		float timer = 0.0f;
+		// Multiplier for speeding up (or slowing down) the global timer
+		float timerSpeed = 0.25f;
+
+		std::chrono::time_point<std::chrono::high_resolution_clock> lastTimestamp, tPrevEnd;
+
 		bool resizing = false;
+
+		bool prepared = false;
+		bool viewUpdated = false;
+
 		void handleMouseMove(int32_t x, int32_t y);
 		void nextFrame();
-		void updateOverlay();
+		void updateOverlay() {};
 		void createPipelineCache();
 		void createCommandPool();
 		void createSynchronizationPrimitives();
@@ -31,6 +49,15 @@ namespace Voortman3D {
 		void setupSwapChain();
 		void createCommandBuffers();
 		void destroyCommandBuffers();
+
+		virtual void setupRenderPass();
+		virtual void setupFrameBuffer();
+
+		virtual void render() {};
+
+		struct Settings {
+			bool overlay = true;
+		} settings;
 
 		/// <summary>
 		/// Constructor of the Voortman3DCore app
@@ -88,9 +115,15 @@ namespace Voortman3D {
 
 		VkSubmitInfo submitInfo;
 
+		Camera camera;
+
 		VkQueue queue{ VK_NULL_HANDLE };
 
 		VkCommandPool cmdPool{ VK_NULL_HANDLE };
+
+		VkPipelineCache pipelineCache{ VK_NULL_HANDLE };
+
+		std::vector<VkFramebuffer>frameBuffers;
 
 		VkPipelineStageFlags submitPipelineStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
@@ -109,6 +142,10 @@ namespace Voortman3D {
 		VkPhysicalDeviceFeatures deviceFeatures{};
 
 		VkPhysicalDeviceMemoryProperties deviceMemoryProperties{};
+
+		VkDescriptorPool descriptorPool{ VK_NULL_HANDLE };
+
+		VkRenderPass renderPass{ VK_NULL_HANDLE };
 
 		struct {
 			VkImage image;

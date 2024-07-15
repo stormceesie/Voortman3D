@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Tools.hpp"
 #include "Initializers.hpp"
+#include <concepts>
 
 namespace Voortman3D {
 	namespace Tools {
@@ -119,10 +120,10 @@ namespace Voortman3D {
 			VkFormatProperties formatProps;
 			vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProps);
 
-			if (tiling == VK_IMAGE_TILING_OPTIMAL)
+			if (tiling == VK_IMAGE_TILING_OPTIMAL) _LIKELY
 				return formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
 
-			if (tiling == VK_IMAGE_TILING_LINEAR)
+			if (tiling == VK_IMAGE_TILING_LINEAR) _UNLIKELY
 				return formatProps.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
 
 			return false;
@@ -301,7 +302,7 @@ namespace Voortman3D {
 		{
 			std::ifstream is(fileName, std::ios::binary | std::ios::in | std::ios::ate);
 
-			if (is.is_open())
+			if (is.is_open()) _LIKELY
 			{
 				size_t size = is.tellg();
 				is.seekg(0, std::ios::beg);
@@ -323,7 +324,7 @@ namespace Voortman3D {
 
 				return shaderModule;
 			}
-			else
+			else _UNLIKELY
 			{
 				std::cerr << "Error: Could not open shader file \"" << fileName << "\"" << "\n";
 				return VK_NULL_HANDLE;
@@ -334,21 +335,6 @@ namespace Voortman3D {
 		{
 			std::ifstream f(filename.c_str());
 			return !f.fail();
-		}
-
-		uint32_t alignedSize(uint32_t value, uint32_t alignment)
-		{
-			return (value + alignment - 1) & ~(alignment - 1);
-		}
-
-		size_t alignedSize(size_t value, size_t alignment)
-		{
-			return (value + alignment - 1) & ~(alignment - 1);
-		}
-
-		VkDeviceSize alignedVkSize(VkDeviceSize value, VkDeviceSize alignment)
-		{
-			return (value + alignment - 1) & ~(alignment - 1);
 		}
 	}
 }
