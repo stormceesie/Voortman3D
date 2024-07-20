@@ -51,6 +51,15 @@
     <ClInclude Include="VulkanTexture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="keycodes.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanglTFModel.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UIOverlay.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Voortman3DCore.cpp">
@@ -96,6 +105,24 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Dependencies\ktx\lib\hashlist.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanglTFModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\imgui\imgui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\imgui\imgui_demo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\imgui\imgui_draw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\imgui\imgui_widgets.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UIOverlay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

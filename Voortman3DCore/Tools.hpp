@@ -8,7 +8,7 @@
 #define VK_CHECK_RESULT(f)																											 \
 {																																	 \
 	VkResult res = (f);																												 \
-	if (res != VK_SUCCESS)																											 \
+	if (res != VK_SUCCESS) _UNLIKELY																								 \
 	{																																 \
 		std::cout << "Fatal : VkResult is \"" << Tools::errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n"; \
 		assert(res == VK_SUCCESS);																									 \
@@ -68,7 +68,7 @@ namespace Voortman3D {
 			VkPipelineStageFlags dstStageMask,
 			VkImageSubresourceRange subresourceRange);
 
-		VkShaderModule loadShader(const char* fileName, VkDevice device);
+		_NODISCARD VkShaderModule loadShader(const char* fileName, VkDevice device);
 
 		/** @brief Checks if a file exists */
 		_NODISCARD bool fileExists(const std::string& filename);

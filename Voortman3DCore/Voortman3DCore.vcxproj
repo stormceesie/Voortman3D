@@ -114,7 +114,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>C:\Git\Voortman3D\Dependencies\ktx\lib;C:\VulkanSDK\1.3.268.0\Include;C:\Git\Voortman3D\Dependencies\glm;C:\Git\Voortman3D\Dependencies\ktx\other_include;C:\Git\Voortman3D\Dependencies\ktx\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Git\Voortman3D\Dependencies\imgui;C:\Git\Voortman3D\Dependencies\tinygltf;C:\Git\Voortman3D\Dependencies\ktx\lib;C:\VulkanSDK\1.3.268.0\Include;C:\Git\Voortman3D\Dependencies\glm;C:\Git\Voortman3D\Dependencies\ktx\other_include;C:\Git\Voortman3D\Dependencies\ktx\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -141,7 +141,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>C:\Git\Voortman3D\Dependencies\ktx\lib;C:\VulkanSDK\1.3.268.0\Include;C:\Git\Voortman3D\Dependencies\glm;C:\Git\Voortman3D\Dependencies\ktx\other_include;C:\Git\Voortman3D\Dependencies\ktx\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Git\Voortman3D\Dependencies\imgui;C:\Git\Voortman3D\Dependencies\tinygltf;C:\Git\Voortman3D\Dependencies\ktx\lib;C:\VulkanSDK\1.3.268.0\Include;C:\Git\Voortman3D\Dependencies\glm;C:\Git\Voortman3D\Dependencies\ktx\other_include;C:\Git\Voortman3D\Dependencies\ktx\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -163,16 +163,35 @@
     <ClInclude Include="Debug.hpp" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Initializers.hpp" />
+    <ClInclude Include="keycodes.hpp" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Tools.hpp" />
+    <ClInclude Include="UIOverlay.hpp" />
     <ClInclude Include="Voortman3DCore.hpp" />
     <ClInclude Include="VulkanBuffer.hpp" />
     <ClInclude Include="VulkanDevice.hpp" />
+    <ClInclude Include="VulkanglTFModel.hpp" />
     <ClInclude Include="VulkanSwapChain.hpp" />
     <ClInclude Include="VulkanTexture.h" />
     <ClInclude Include="Window.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Dependencies\imgui\imgui.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\imgui\imgui_demo.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\imgui\imgui_draw.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\imgui\imgui_widgets.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\Dependencies\ktx\lib\checkheader.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -205,9 +224,17 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Tools.cpp" />
+    <ClCompile Include="UIOverlay.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Voortman3DCore.cpp" />
     <ClCompile Include="VulkanBuffer.cpp" />
     <ClCompile Include="VulkanDevice.cpp" />
+    <ClCompile Include="VulkanglTFModel.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="VulkanSwapChain.cpp" />
     <ClCompile Include="VulkanTexture.cpp" />
     <ClCompile Include="Window.cpp" />

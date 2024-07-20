@@ -8,6 +8,7 @@
 #include "Initializers.hpp"
 #include "Camera.hpp"
 #include "VulkanTexture.h"
+#include "UIOverlay.hpp"
 
 namespace Voortman3D {
 	class Voortman3DCore {
@@ -25,9 +26,13 @@ namespace Voortman3D {
 		uint32_t frameCounter = 0;
 		uint32_t lastFPS = 0;
 
+		glm::vec2 mousePos;
+
 		float frameTimer = 1.0f;
 
 		bool paused = false;
+
+		UIOverlay uiOverlay;
 
 		float timer = 0.0f;
 		// Multiplier for speeding up (or slowing down) the global timer
@@ -39,14 +44,21 @@ namespace Voortman3D {
 
 		bool resized = false;
 
+		bool windowOpen = true;
+
 		bool prepared = false;
 		bool viewUpdated = false;
 
 		uint32_t currentBuffer = 0;
 
+		struct {
+			bool left = false;
+			bool right = false;
+			bool middle = false;
+		} mouseButtons;
+
 		void handleMouseMove(int32_t x, int32_t y);
 		void nextFrame();
-		void updateOverlay() {};
 		void createPipelineCache();
 		void createCommandPool();
 		void createSynchronizationPrimitives();
@@ -60,6 +72,8 @@ namespace Voortman3D {
 		void prepareFrame();
 		void windowResize();
 
+		void drawUI(const VkCommandBuffer commandbuffer);
+
 		VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
 
 		virtual void setupRenderPass();
@@ -68,6 +82,10 @@ namespace Voortman3D {
 		virtual void render() {};
 
 		virtual void buildCommandBuffers() {};
+
+		virtual void OnUpdateUIOverlay(UIOverlay* uioverlay) {};
+
+		void updateOverlay();
 
 		struct Settings {
 			bool overlay = true;
@@ -150,6 +168,7 @@ namespace Voortman3D {
 		std::vector<VkCommandBuffer> drawCmdBuffers;
 
 		std::vector<const char*> enabledInstanceExtensions;
+		std::vector<const char*> enabledDeviceExtensions;
 
 		VkPhysicalDeviceFeatures enabledFeatures{};
 

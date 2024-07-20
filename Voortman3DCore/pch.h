@@ -25,6 +25,7 @@
 #include <assert.h>
 #include <exception>
 #include <fstream>
+#include <iomanip>
 
 #include <ktx.h>
 #include <ktxvulkan.h>

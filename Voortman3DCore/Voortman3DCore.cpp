@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "framework.h"
 #include "Voortman3DCore.hpp"
+#include "keycodes.hpp"
 
 namespace Voortman3D {
 	std::vector<const char*> Voortman3DCore::args;
@@ -151,7 +152,20 @@ namespace Voortman3D {
 		return result;
 	}
 
+	void Voortman3DCore::drawUI(const VkCommandBuffer commandbuffer) {
+		if (settings.overlay && uiOverlay.visible) {
+			const VkViewport viewport = Initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
+			const VkRect2D scissor = Initializers::rect2D(width, height, 0, 0);
+			vkCmdSetViewport(commandbuffer, 0, 1, &viewport);
+			vkCmdSetScissor(commandbuffer, 0, 1, &scissor);
+
+			uiOverlay.draw(commandbuffer);
+		}
+	}
+
 	Voortman3DCore::~Voortman3DCore() {
+		vkDeviceWaitIdle(device);
+		
 		swapChain.cleanup();
 		
 		if (descriptorPool)
@@ -184,6 +198,9 @@ namespace Voortman3D {
 		for (auto& fence : waitFences) {
 			vkDestroyFence(device, fence, nullptr);
 		}
+
+		if (settings.overlay)
+			uiOverlay.freeResources();
 
 		if (vulkanDevice)
 			delete vulkanDevice;
@@ -255,7 +272,7 @@ namespace Voortman3D {
 
 		vulkanDevice = new VulkanDevice(physicalDevice);
 
-		VkResult res = vulkanDevice->createLogicalDevice(enabledFeatures, enabledInstanceExtensions, deviceCreatepNextChain);
+		VkResult res = vulkanDevice->createLogicalDevice(enabledFeatures, enabledDeviceExtensions, deviceCreatepNextChain);
 
 		if (res != VK_SUCCESS) {
 			std::cerr << "Could not create Vulkan Device : \n" + Tools::errorString(res) << std::endl;
@@ -504,6 +521,42 @@ namespace Voortman3D {
 		}
 	}
 
+	void Voortman3DCore::updateOverlay() {
+		if (!settings.overlay)
+			return;
+
+		ImGuiIO& io = ImGui::GetIO();
+
+		io.DisplaySize = ImVec2((float)width, (float)height);
+		io.DeltaTime = frameTimer;
+
+		io.MousePos = ImVec2(mousePos.x, mousePos.y);
+		io.MouseDown[0] = mouseButtons.left && uiOverlay.visible;
+		io.MouseDown[1] = mouseButtons.right && uiOverlay.visible;
+		io.MouseDown[2] = mouseButtons.middle && uiOverlay.visible;
+
+		ImGui::NewFrame();
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+		ImGui::SetNextWindowPos(ImVec2(10 * uiOverlay.scale, 10 * uiOverlay.scale));
+		ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiSetCond_FirstUseEver);
+		ImGui::Begin("CTO Conditional Rendering", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+		ImGui::TextUnformatted(deviceProperties.deviceName);
+		ImGui::Text("%.2f ms/frame (%.1d fps)", (1000.0f / lastFPS), lastFPS);
+
+		ImGui::PushItemWidth(110.0f * uiOverlay.scale);
+		OnUpdateUIOverlay(&uiOverlay);
+		ImGui::PopItemWidth();
+
+		ImGui::End();
+		ImGui::PopStyleVar();
+		ImGui::Render();
+
+		if (uiOverlay.update() || uiOverlay.updated) {
+			buildCommandBuffers();
+			uiOverlay.updated = false;
+		}
+	}
 
 	void Voortman3DCore::prepare() {
 #ifdef _DEBUG
@@ -519,6 +572,17 @@ namespace Voortman3D {
 		setupRenderPass();
 		createPipelineCache();
 		setupFrameBuffer();
+
+		if (settings.overlay) {
+			uiOverlay.device = vulkanDevice;
+			uiOverlay.queue = queue;
+			uiOverlay.shaders = {
+				loadShader("C:/Git/Voortman3D/Voortman3DCore/Shaders/uioverlay.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+				loadShader("C:/Git/Voortman3D/Voortman3DCore/Shaders/uioverlay.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
+			};
+			uiOverlay.prepareResources();
+			uiOverlay.preparePipeline(pipelineCache, renderPass, swapChain.colorFormat, depthFormat);
+		}
 
 #ifdef _DEBUG
 		STOPCOUNTER();
@@ -599,7 +663,9 @@ namespace Voortman3D {
 		// Recreate swap chain
 		width = destWidth;
 		height = destHeight;
-		setupSwapChain();
+
+		if (windowOpen)
+			setupSwapChain();
 
 		// Recreate the frame buffers
 		vkDestroyImageView(device, depthStencil.view, nullptr);
@@ -613,7 +679,7 @@ namespace Voortman3D {
 
 		if ((width > 0.0f) && (height > 0.0f)) {
 			if (settings.overlay) {
-//				UIOverlay.resize(width, height);
+				uiOverlay.resize(width, height);
 			}
 		}
 
@@ -692,15 +758,159 @@ namespace Voortman3D {
 		}
 	}
 
+	void Voortman3DCore::handleMouseMove(int32_t x, int32_t y) {
+		int32_t dx = (int32_t)mousePos.x - x;
+		int32_t dy = (int32_t)mousePos.y - y;
+
+		bool handled = false;
+
+		if (settings.overlay) {
+			ImGuiIO& io = ImGui::GetIO();
+			handled = io.WantCaptureMouse && uiOverlay.visible;
+		}
+
+		if (handled) {
+			mousePos = glm::vec2((float)x, (float)y);
+			return;
+		}
+
+		if (mouseButtons.left) {
+			camera.rotate(glm::vec3(dy * camera.rotationSpeed, -dx * camera.rotationSpeed, 0.0f));
+			viewUpdated = true;
+		}
+		if (mouseButtons.right) {
+			camera.translate(glm::vec3(-0.0f, 0.0f, dy * .005f));
+			viewUpdated = true;
+		}
+		if (mouseButtons.middle) {
+			camera.translate(glm::vec3(-dx * 0.005f, -dy * 0.005f, 0.0f));
+			viewUpdated = true;
+		}
+		mousePos = glm::vec2((float)x, (float)y);
+	}
+
 	void Voortman3DCore::handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		switch (uMsg) {
 		case WM_CLOSE:
+			windowOpen = false;
 			DestroyWindow(window->window());
 			PostQuitMessage(0);
 			break;
 
 		case WM_PAINT:
 			ValidateRect(window->window(), NULL);
+			break;
+		case WM_KEYDOWN:
+			switch (wParam)
+			{
+			case KEY_P:
+				paused = !paused;
+				break;
+			case KEY_F1:
+				uiOverlay.visible = !uiOverlay.visible;
+				uiOverlay.updated = true;
+				break;
+			case KEY_ESCAPE:
+				PostQuitMessage(0);
+				break;
+			}
+
+			if (camera.type == Camera::firstperson)
+			{
+				switch (wParam)
+				{
+				case KEY_W:
+					camera.keys.up = true;
+					break;
+				case KEY_S:
+					camera.keys.down = true;
+					break;
+				case KEY_A:
+					camera.keys.left = true;
+					break;
+				case KEY_D:
+					camera.keys.right = true;
+					break;
+				}
+			}
+
+			break;
+		case WM_KEYUP:
+			if (camera.type == Camera::firstperson)
+			{
+				switch (wParam)
+				{
+				case KEY_W:
+					camera.keys.up = false;
+					break;
+				case KEY_S:
+					camera.keys.down = false;
+					break;
+				case KEY_A:
+					camera.keys.left = false;
+					break;
+				case KEY_D:
+					camera.keys.right = false;
+					break;
+				}
+			}
+			break;
+		case WM_LBUTTONDOWN:
+			mousePos = glm::vec2((float)LOWORD(lParam), (float)HIWORD(lParam));
+			mouseButtons.left = true;
+			break;
+		case WM_RBUTTONDOWN:
+			mousePos = glm::vec2((float)LOWORD(lParam), (float)HIWORD(lParam));
+			mouseButtons.right = true;
+			break;
+		case WM_MBUTTONDOWN:
+			mousePos = glm::vec2((float)LOWORD(lParam), (float)HIWORD(lParam));
+			mouseButtons.middle = true;
+			break;
+		case WM_LBUTTONUP:
+			mouseButtons.left = false;
+			break;
+		case WM_RBUTTONUP:
+			mouseButtons.right = false;
+			break;
+		case WM_MBUTTONUP:
+			mouseButtons.middle = false;
+			break;
+		case WM_MOUSEWHEEL:
+		{
+			short wheelDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+			camera.translate(glm::vec3(0.0f, 0.0f, (float)wheelDelta * 0.005f));
+			viewUpdated = true;
+			break;
+		}
+		case WM_MOUSEMOVE:
+		{
+			handleMouseMove(LOWORD(lParam), HIWORD(lParam));
+			break;
+		}
+		case WM_SIZE:
+			if ((prepared) && (wParam != SIZE_MINIMIZED))
+			{
+				if ((resizing) || ((wParam == SIZE_MAXIMIZED) || (wParam == SIZE_RESTORED)))
+				{
+					destWidth = LOWORD(lParam);
+					destHeight = HIWORD(lParam);
+					windowResize();
+				}
+			}
+			break;
+		case WM_GETMINMAXINFO:
+		{
+			LPMINMAXINFO minMaxInfo = (LPMINMAXINFO)lParam;
+			minMaxInfo->ptMinTrackSize.x = 64;
+			minMaxInfo->ptMinTrackSize.y = 64;
+			break;
+		}
+		case WM_ENTERSIZEMOVE:
+			resizing = true;
+			break;
+		case WM_EXITSIZEMOVE:
+			resizing = false;
 			break;
 		}
 	}
