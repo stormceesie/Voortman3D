@@ -166,6 +166,10 @@ namespace Voortman3D {
 			vkDestroyFramebuffer(device, frameBuffer, nullptr);
 		}
 
+		for (auto& shaderModule : shaderModules) {
+			vkDestroyShaderModule(device, shaderModule, nullptr);
+		}
+
 		vkDestroyImageView(device, depthStencil.view, nullptr);
 		vkDestroyImage(device, depthStencil.image, nullptr);
 		vkFreeMemory(device, depthStencil.mem, nullptr);
@@ -565,6 +569,104 @@ namespace Voortman3D {
 
 		// TODO: Cap UI overlay update rates
 		updateOverlay();
+	}
+
+	VkPipelineShaderStageCreateInfo Voortman3DCore::loadShader(std::string fileName, VkShaderStageFlagBits stage)
+	{
+		VkPipelineShaderStageCreateInfo shaderStage = {};
+		shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		shaderStage.stage = stage;
+
+		shaderStage.module = Tools::loadShader(fileName.c_str(), device);
+
+		shaderStage.pName = "main";
+		assert(shaderStage.module != VK_NULL_HANDLE);
+		shaderModules.push_back(shaderStage.module);
+		return shaderStage;
+	}
+
+	void Voortman3DCore::windowResize() {
+		if (!prepared)
+		{
+			return;
+		}
+		prepared = false;
+		resized = true;
+
+		// Ensure all operations on the device have been finished before destroying resources
+		vkDeviceWaitIdle(device);
+
+		// Recreate swap chain
+		width = destWidth;
+		height = destHeight;
+		setupSwapChain();
+
+		// Recreate the frame buffers
+		vkDestroyImageView(device, depthStencil.view, nullptr);
+		vkDestroyImage(device, depthStencil.image, nullptr);
+		vkFreeMemory(device, depthStencil.mem, nullptr);
+		setupDepthStencil();
+		for (uint32_t i = 0; i < frameBuffers.size(); i++) {
+			vkDestroyFramebuffer(device, frameBuffers[i], nullptr);
+		}
+		setupFrameBuffer();
+
+		if ((width > 0.0f) && (height > 0.0f)) {
+			if (settings.overlay) {
+//				UIOverlay.resize(width, height);
+			}
+		}
+
+		// Command buffers need to be recreated as they may store
+		// references to the recreated frame buffer
+		destroyCommandBuffers();
+		createCommandBuffers();
+		buildCommandBuffers();
+
+		// SRS - Recreate fences in case number of swapchain images has changed on resize
+		for (auto& fence : waitFences) {
+			vkDestroyFence(device, fence, nullptr);
+		}
+		createSynchronizationPrimitives();
+
+		vkDeviceWaitIdle(device);
+
+		if ((width > 0.0f) && (height > 0.0f)) {
+			camera.updateAspectRatio((float)width / (float)height);
+		}
+
+		prepared = true;
+	}
+
+	void Voortman3DCore::submitFrame() {
+		VkResult result = swapChain.queuePresent(queue, currentBuffer, semaphores.renderComplete);
+		// Recreate the swapchain if it's no longer compatible with the surface (OUT_OF_DATE) or no longer optimal for presentation (SUBOPTIMAL)
+		if ((result == VK_ERROR_OUT_OF_DATE_KHR) || (result == VK_SUBOPTIMAL_KHR)) {
+			windowResize();
+			if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+				return;
+			}
+		}
+		else {
+			VK_CHECK_RESULT(result);
+		}
+		VK_CHECK_RESULT(vkQueueWaitIdle(queue));
+	}
+
+	void Voortman3DCore::prepareFrame() {
+		// Acquire the next image from the swap chain
+		VkResult result = swapChain.acquireNextImage(semaphores.presentComplete, &currentBuffer);
+		// Recreate the swapchain if it's no longer compatible with the surface (OUT_OF_DATE)
+		// SRS - If no longer optimal (VK_SUBOPTIMAL_KHR), wait until submitFrame() in case number of swapchain images will change on resize
+		if ((result == VK_ERROR_OUT_OF_DATE_KHR) || (result == VK_SUBOPTIMAL_KHR)) {
+			if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+				windowResize();
+			}
+			return;
+		}
+		else {
+			VK_CHECK_RESULT(result);
+		}
 	}
 
 	void Voortman3DCore::renderLoop() {

@@ -7,6 +7,7 @@
 #include "VulkanSwapChain.hpp"
 #include "Initializers.hpp"
 #include "Camera.hpp"
+#include "VulkanTexture.h"
 
 namespace Voortman3D {
 	class Voortman3DCore {
@@ -36,8 +37,12 @@ namespace Voortman3D {
 
 		bool resizing = false;
 
+		bool resized = false;
+
 		bool prepared = false;
 		bool viewUpdated = false;
+
+		uint32_t currentBuffer = 0;
 
 		void handleMouseMove(int32_t x, int32_t y);
 		void nextFrame();
@@ -50,10 +55,19 @@ namespace Voortman3D {
 		void createCommandBuffers();
 		void destroyCommandBuffers();
 
+		void submitFrame();
+
+		void prepareFrame();
+		void windowResize();
+
+		VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
+
 		virtual void setupRenderPass();
 		virtual void setupFrameBuffer();
 
 		virtual void render() {};
+
+		virtual void buildCommandBuffers() {};
 
 		struct Settings {
 			bool overlay = true;
@@ -114,6 +128,8 @@ namespace Voortman3D {
 		VulkanSwapChain swapChain;
 
 		VkSubmitInfo submitInfo;
+
+		std::vector<VkShaderModule> shaderModules;
 
 		Camera camera;
 

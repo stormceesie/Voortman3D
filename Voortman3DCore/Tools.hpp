@@ -5,14 +5,14 @@
 
 #define DEFAULT_FENCE_TIMEOUT 100000000000
 
-#define VK_CHECK_RESULT(f)																				\
-{																										\
-	VkResult res = (f);																					\
-	if (res != VK_SUCCESS)																				\
-	{																									\
+#define VK_CHECK_RESULT(f)																											 \
+{																																	 \
+	VkResult res = (f);																												 \
+	if (res != VK_SUCCESS)																											 \
+	{																																 \
 		std::cout << "Fatal : VkResult is \"" << Tools::errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n"; \
-		assert(res == VK_SUCCESS);																		\
-	}																									\
+		assert(res == VK_SUCCESS);																									 \
+	}																																 \
 }
 
 namespace Voortman3D {
@@ -71,7 +71,7 @@ namespace Voortman3D {
 		VkShaderModule loadShader(const char* fileName, VkDevice device);
 
 		/** @brief Checks if a file exists */
-		_NODISCARD inline static bool fileExists(const std::string& filename);
+		_NODISCARD bool fileExists(const std::string& filename);
 
 		/// <summary>
 		/// Function to get the aligned size in any kind of integer.
