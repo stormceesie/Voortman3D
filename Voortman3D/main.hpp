@@ -16,6 +16,8 @@ namespace Voortman3D {
 
 		vkglTF::Model scene;
 
+		bool wireframe = false;
+
 		struct UniformData {
 			glm::mat4 projection;
 			glm::mat4 view;
@@ -27,7 +29,12 @@ namespace Voortman3D {
 		Buffer conditionalBuffer;
 
 		VkPipelineLayout pipelineLayout{ VK_NULL_HANDLE };
-		VkPipeline pipeline{ VK_NULL_HANDLE };
+
+		struct Pipelines {
+			VkPipeline solid{ VK_NULL_HANDLE };
+			VkPipeline wireframe{ VK_NULL_HANDLE };
+		} pipelines;
+		
 		VkDescriptorSetLayout descriptorSetLayout{ VK_NULL_HANDLE };
 		VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
 

@@ -10,7 +10,7 @@
 	VkResult res = (f);																												 \
 	if (res != VK_SUCCESS) _UNLIKELY																								 \
 	{																																 \
-		std::cout << "Fatal : VkResult is \"" << Tools::errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n"; \
+		std::cerr << "Fatal : VkResult is \"" << Tools::errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n"; \
 		assert(res == VK_SUCCESS);																									 \
 	}																																 \
 }

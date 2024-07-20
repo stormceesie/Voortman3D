@@ -18,7 +18,12 @@ namespace Voortman3D {
 
 	Voortman3D::~Voortman3D() {
 		if (device) {
-			vkDestroyPipeline(device, pipeline, nullptr);
+			if (pipelines.solid)
+				vkDestroyPipeline(device, pipelines.solid, nullptr);
+
+			if (pipelines.wireframe)
+				vkDestroyPipeline(device, pipelines.wireframe, nullptr);
+
 			vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 			vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 			uniformBuffer.destroy();
@@ -42,6 +47,11 @@ namespace Voortman3D {
 				}
 				updateConditionalBuffer();
 			}
+
+			if (uioverlay->checkBox("Wireframe", &wireframe)) {
+				buildCommandBuffers();
+			}
+
 			ImGui::NewLine();
 
 			ImGui::BeginChild("InnerRegion", ImVec2(200.0f * uioverlay->scale, 400.0f * uioverlay->scale), false);
@@ -164,15 +174,19 @@ namespace Voortman3D {
 		pipelineCI.pDynamicState = &dynamicStateCI;
 		pipelineCI.pVertexInputState = vkglTF::Vertex::getPipelineVertexInputState({ vkglTF::VertexComponent::Position, vkglTF::VertexComponent::Normal, vkglTF::VertexComponent::UV });
 
-		const std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {
+		const std::array<VkPipelineShaderStageCreateInfo, 2> shaderStagesRender = {
 			loadShader("Shaders/model.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
 			loadShader("Shaders/model.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
 		};
 
-		pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
-		pipelineCI.pStages = shaderStages.data();
+		pipelineCI.stageCount = static_cast<uint32_t>(shaderStagesRender.size());
+		pipelineCI.pStages = shaderStagesRender.data();
 
-		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipeline));
+		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipelines.solid));
+
+		rasterizationStateCI.polygonMode = VK_POLYGON_MODE_LINE;
+		pipelineCI.renderPass = renderPass;
+		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipelines.wireframe));
 	}
 
 	void Voortman3D::loadAssets() {
@@ -183,7 +197,7 @@ namespace Voortman3D {
 		VkCommandBufferBeginInfo cmdBufInfo = Initializers::commandBufferBeginInfo();
 
 		VkClearValue clearValues[2];
-		clearValues[0].color = { { 1.0f, 1.0f, 1.0f, 1.0f } };
+		clearValues[0].color = { { 0.812f, 0.063f, 0.063f, 1.0f } };
 		clearValues[1].depthStencil = { 1.0f, 0 };
 
 		VkRenderPassBeginInfo renderPassBeginInfo = Initializers::renderPassBeginInfo();
@@ -209,7 +223,7 @@ namespace Voortman3D {
 
 			vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
 
-			vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+			vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? pipelines.wireframe : pipelines.solid);
 
 			const VkDeviceSize offsets[1] = { 0 };
 			vkCmdBindVertexBuffers(drawCmdBuffers[i], 0, 1, &scene.vertices.buffer, offsets);

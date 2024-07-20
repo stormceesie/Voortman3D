@@ -5,26 +5,26 @@
 
 namespace Voortman3D {
 	namespace Tools {
-		std::string physicalDeviceTypeString(VkPhysicalDeviceType type)
+		_NODISCARD std::string physicalDeviceTypeString(VkPhysicalDeviceType type)
 		{
 			switch (type)
 			{
-#define STR(r) case VK_PHYSICAL_DEVICE_TYPE_ ##r: return #r
+#define STR(r) case VK_PHYSICAL_DEVICE_TYPE_ ##r: _LIKELY return #r
 				STR(OTHER);
 				STR(INTEGRATED_GPU);
 				STR(DISCRETE_GPU);
 				STR(VIRTUAL_GPU);
 				STR(CPU);
 #undef STR
-			default: return "UNKNOWN_DEVICE_TYPE";
+			default: _UNLIKELY return "UNKNOWN_DEVICE_TYPE";
 			}
 		}
 
-		std::string errorString(VkResult errorCode)
+		_NODISCARD std::string errorString(const VkResult errorCode)
 		{
 			switch (errorCode)
 			{
-#define STR(r) case VK_ ##r: return #r
+#define STR(r) case VK_ ##r: _LIKELY return #r
 				STR(NOT_READY);
 				STR(TIMEOUT);
 				STR(EVENT_SET);
@@ -50,7 +50,7 @@ namespace Voortman3D {
 				STR(ERROR_INVALID_SHADER_NV);
 				STR(ERROR_INCOMPATIBLE_SHADER_BINARY_EXT);
 #undef STR
-			default:
+			default: _UNLIKELY
 				return "UNKNOWN_ERROR";
 			}
 		}
