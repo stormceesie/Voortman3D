@@ -165,6 +165,7 @@
     <ClInclude Include="Initializers.hpp" />
     <ClInclude Include="keycodes.hpp" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="threadpool.hpp" />
     <ClInclude Include="Tools.hpp" />
     <ClInclude Include="UIOverlay.hpp" />
     <ClInclude Include="Voortman3DCore.hpp" />

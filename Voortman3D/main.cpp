@@ -16,6 +16,12 @@ namespace Voortman3D {
 		enabledDeviceExtensions.push_back(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
 	}
 
+	void Voortman3D::GetEnabledFeatures() {
+		if (deviceFeatures.fillModeNonSolid) {
+			enabledFeatures.fillModeNonSolid = VK_TRUE;
+		}
+	}
+
 	Voortman3D::~Voortman3D() {
 		if (device) {
 			if (pipelines.solid)

@@ -40,10 +40,7 @@ namespace Voortman3D {
 
 		void renderNode(vkglTF::Node* node, VkCommandBuffer commandBuffer);
 
-		virtual void OnUpdateUIOverlay(UIOverlay* uioverlay);
-
 		void loadAssets();
-		void prepare();
 		void prepareUniformBuffers();
 		void setupDescriptors();
 		void preparePipelines();
@@ -54,7 +51,10 @@ namespace Voortman3D {
 		void prepareConditionalRendering();
 		void draw();
 
-		virtual void render();
+		void OnUpdateUIOverlay(UIOverlay* uioverlay) override;
+		void prepare()			                     override;
+		void GetEnabledFeatures()                    override;
+		void render()                                override;
 	};
 }
 

@@ -270,7 +270,11 @@ namespace Voortman3D {
 		vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
 		vkGetPhysicalDeviceMemoryProperties(physicalDevice, &deviceMemoryProperties);
 
+		GetEnabledFeatures();
+
 		vulkanDevice = new VulkanDevice(physicalDevice);
+
+		GetEnabledExtensions();
 
 		VkResult res = vulkanDevice->createLogicalDevice(enabledFeatures, enabledDeviceExtensions, deviceCreatepNextChain);
 
@@ -764,12 +768,12 @@ namespace Voortman3D {
 
 		bool handled = false;
 
-		if (settings.overlay) {
+		if (settings.overlay) _LIKELY {
 			ImGuiIO& io = ImGui::GetIO();
 			handled = io.WantCaptureMouse && uiOverlay.visible;
 		}
 
-		if (handled) {
+		if (handled) _LIKELY {
 			mousePos = glm::vec2((float)x, (float)y);
 			return;
 		}
@@ -786,36 +790,37 @@ namespace Voortman3D {
 			camera.translate(glm::vec3(-dx * 0.005f, -dy * 0.005f, 0.0f));
 			viewUpdated = true;
 		}
+
 		mousePos = glm::vec2((float)x, (float)y);
 	}
 
 	void Voortman3DCore::handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		switch (uMsg) {
-		case WM_CLOSE:
+		case WM_CLOSE: _UNLIKELY // Not very likely to happen [[likely]] or [[unlikely]] attribute should be used as much as possible
 			windowOpen = false;
 			DestroyWindow(window->window());
 			PostQuitMessage(0);
 			break;
 
-		case WM_PAINT:
+		case WM_PAINT: _LIKELY
 			ValidateRect(window->window(), NULL);
 			break;
 		case WM_KEYDOWN:
 			switch (wParam)
 			{
-			case KEY_P:
+			case KEY_P: _UNLIKELY
 				paused = !paused;
 				break;
-			case KEY_F1:
+			case KEY_F1: _UNLIKELY
 				uiOverlay.visible = !uiOverlay.visible;
 				uiOverlay.updated = true;
 				break;
-			case KEY_ESCAPE:
+			case KEY_ESCAPE: _UNLIKELY
 				PostQuitMessage(0);
 				break;
 			}
 
-			if (camera.type == Camera::firstperson)
+			if (camera.type == Camera::firstperson) _UNLIKELY // Wont be used probalbly by Voortman
 			{
 				switch (wParam)
 				{
@@ -836,7 +841,7 @@ namespace Voortman3D {
 
 			break;
 		case WM_KEYUP:
-			if (camera.type == Camera::firstperson)
+			if (camera.type == Camera::firstperson) _UNLIKELY // Wont be used probably by Voortman
 			{
 				switch (wParam)
 				{
@@ -855,7 +860,7 @@ namespace Voortman3D {
 				}
 			}
 			break;
-		case WM_LBUTTONDOWN:
+		case WM_LBUTTONDOWN: // Often used keys wont be getting any attributes because this really depends on the user
 			mousePos = glm::vec2((float)LOWORD(lParam), (float)HIWORD(lParam));
 			mouseButtons.left = true;
 			break;
@@ -906,10 +911,10 @@ namespace Voortman3D {
 			minMaxInfo->ptMinTrackSize.y = 64;
 			break;
 		}
-		case WM_ENTERSIZEMOVE:
+		case WM_ENTERSIZEMOVE: _UNLIKELY // Wont be happening very often
 			resizing = true;
 			break;
-		case WM_EXITSIZEMOVE:
+		case WM_EXITSIZEMOVE: _UNLIKELY
 			resizing = false;
 			break;
 		}

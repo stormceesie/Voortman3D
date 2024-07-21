@@ -57,7 +57,7 @@ namespace Voortman3D {
 			bool middle = false;
 		} mouseButtons;
 
-		void handleMouseMove(int32_t x, int32_t y);
+		void handleMouseMove(const int32_t x, const int32_t y);
 		void nextFrame();
 		void createPipelineCache();
 		void createCommandPool();
@@ -74,12 +74,13 @@ namespace Voortman3D {
 
 		void drawUI(const VkCommandBuffer commandbuffer);
 
-		VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
+		_NODISCARD VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
 
 		virtual void setupRenderPass();
 		virtual void setupFrameBuffer();
 
-		virtual void render() {};
+		virtual void render() = 0;
+
 
 		virtual void buildCommandBuffers() {};
 
@@ -116,12 +117,16 @@ namespace Voortman3D {
 		/// <summary>
 		/// Function that does some preperation like loading 3D models etc
 		/// </summary>
-		void prepare();
+		virtual void prepare();
 
 		/// <summary>
 		/// Renderloop function. This function will endure the entire duration of the program.
 		/// </summary>
 		void renderLoop();
+
+		virtual void GetEnabledFeatures() {};
+
+		virtual void GetEnabledExtensions() {};
 
 		/// <summary>
 		/// Function that will handle the WIN32 messages
@@ -210,7 +215,7 @@ namespace Voortman3D {
 
 		void setupConsole(const std::wstring& title);
 
-		static char* TO_CHAR(const wchar_t* string);
+		_NODISCARD inline static char* TO_CHAR(const wchar_t* string);
 	};
 }
 

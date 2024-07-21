@@ -26,6 +26,13 @@
 #include <exception>
 #include <fstream>
 #include <iomanip>
+#include <thread>
+#include <memory>
+
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+#include <functional>
 
 #include <ktx.h>
 #include <ktxvulkan.h>
