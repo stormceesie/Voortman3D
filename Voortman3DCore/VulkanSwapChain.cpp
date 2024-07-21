@@ -1,3 +1,5 @@
+// Code is derived from Sascha Willems licensed under MIT license
+
 #include "pch.h"
 #include "VulkanSwapChain.hpp"
 
@@ -276,6 +278,11 @@ namespace Voortman3D {
 
 		// Get the swap chain buffers containing the image and imageview
 		buffers.resize(imageCount);
+
+#ifdef _DEBUG
+		std::cout << "Using " << imageCount << " buffers in the swapchain !\n";
+#endif
+
 		for (uint32_t i = 0; i < imageCount; i++)
 		{
 			VkImageViewCreateInfo colorAttachmentView = {};

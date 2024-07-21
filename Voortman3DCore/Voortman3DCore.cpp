@@ -526,7 +526,7 @@ namespace Voortman3D {
 	}
 
 	void Voortman3DCore::updateOverlay() {
-		if (!settings.overlay)
+		if (!settings.overlay) _UNLIKELY
 			return;
 
 		ImGuiIO& io = ImGui::GetIO();
@@ -612,7 +612,7 @@ namespace Voortman3D {
 			viewUpdated = true;
 		}
 		// Convert to clamped timer value
-		if (!paused)
+		if (!paused) _LIKELY
 		{
 			timer += timerSpeed * frameTimer;
 			if (timer > 1.0)
@@ -626,8 +626,7 @@ namespace Voortman3D {
 			lastFPS = static_cast<uint32_t>((float)frameCounter * (1000.0f / fpsTimer));
 #if defined(_WIN32)
 			if (!settings.overlay) {
-				std::wstring windowTitle = title;
-				SetWindowText(window->window(), windowTitle.c_str());
+				SetWindowText(window->window(), title.c_str());
 			}
 #endif
 			frameCounter = 0;
@@ -639,7 +638,7 @@ namespace Voortman3D {
 		updateOverlay();
 	}
 
-	VkPipelineShaderStageCreateInfo Voortman3DCore::loadShader(std::string fileName, VkShaderStageFlagBits stage)
+	VkPipelineShaderStageCreateInfo Voortman3DCore::loadShader(const std::string& fileName, VkShaderStageFlagBits stage)
 	{
 		VkPipelineShaderStageCreateInfo shaderStage = {};
 		shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -724,6 +723,7 @@ namespace Voortman3D {
 	}
 
 	void Voortman3DCore::prepareFrame() {
+
 		// Acquire the next image from the swap chain
 		VkResult result = swapChain.acquireNextImage(semaphores.presentComplete, &currentBuffer);
 		// Recreate the swapchain if it's no longer compatible with the surface (OUT_OF_DATE)

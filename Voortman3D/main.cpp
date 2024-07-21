@@ -17,17 +17,17 @@ namespace Voortman3D {
 	}
 
 	void Voortman3D::GetEnabledFeatures() {
-		if (deviceFeatures.fillModeNonSolid) {
+		if (deviceFeatures.fillModeNonSolid) _LIKELY {
 			enabledFeatures.fillModeNonSolid = VK_TRUE;
 		}
 	}
 
 	Voortman3D::~Voortman3D() {
 		if (device) {
-			if (pipelines.solid)
+			if (pipelines.solid) _LIKELY
 				vkDestroyPipeline(device, pipelines.solid, nullptr);
 
-			if (pipelines.wireframe)
+			if (pipelines.wireframe) _LIKELY
 				vkDestroyPipeline(device, pipelines.wireframe, nullptr);
 
 			vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
@@ -40,21 +40,21 @@ namespace Voortman3D {
 	void Voortman3D::OnUpdateUIOverlay(UIOverlay* uioverlay) {
 		if (uioverlay->header("Visibility")) {
 
-			if (uioverlay->button("All")) {
+			if (uioverlay->button("All")) _UNLIKELY { // Wont be true very often
 				for (auto i = 0; i < conditionalVisibility.size(); i++) {
 					conditionalVisibility[i] = 1;
 				}
 				updateConditionalBuffer();
 			}
 			ImGui::SameLine();
-			if (uioverlay->button("None")) {
+			if (uioverlay->button("None")) _UNLIKELY {
 				for (auto i = 0; i < conditionalVisibility.size(); i++) {
 					conditionalVisibility[i] = 0;
 				}
 				updateConditionalBuffer();
 			}
 
-			if (uioverlay->checkBox("Wireframe", &wireframe)) {
+			if (uioverlay->checkBox("Wireframe", &wireframe)) _UNLIKELY {
 				buildCommandBuffers();
 			}
 

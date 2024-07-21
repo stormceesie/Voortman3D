@@ -57,41 +57,6 @@ namespace Voortman3D {
 			bool middle = false;
 		} mouseButtons;
 
-		void handleMouseMove(const int32_t x, const int32_t y);
-		void nextFrame();
-		void createPipelineCache();
-		void createCommandPool();
-		void createSynchronizationPrimitives();
-		void initSwapchain();
-		void setupSwapChain();
-		void createCommandBuffers();
-		void destroyCommandBuffers();
-
-		void submitFrame();
-
-		void prepareFrame();
-		void windowResize();
-
-		void drawUI(const VkCommandBuffer commandbuffer);
-
-		_NODISCARD VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
-
-		virtual void setupRenderPass();
-		virtual void setupFrameBuffer();
-
-		virtual void render() = 0;
-
-
-		virtual void buildCommandBuffers() {};
-
-		virtual void OnUpdateUIOverlay(UIOverlay* uioverlay) {};
-
-		void updateOverlay();
-
-		struct Settings {
-			bool overlay = true;
-		} settings;
-
 		/// <summary>
 		/// Constructor of the Voortman3DCore app
 		/// </summary>
@@ -115,18 +80,9 @@ namespace Voortman3D {
 		void setupWindow(WNDPROC WndProc);
 
 		/// <summary>
-		/// Function that does some preperation like loading 3D models etc
-		/// </summary>
-		virtual void prepare();
-
-		/// <summary>
 		/// Renderloop function. This function will endure the entire duration of the program.
 		/// </summary>
 		void renderLoop();
-
-		virtual void GetEnabledFeatures() {};
-
-		virtual void GetEnabledExtensions() {};
 
 		/// <summary>
 		/// Function that will handle the WIN32 messages
@@ -198,6 +154,10 @@ namespace Voortman3D {
 			VkSemaphore renderComplete;
 		} semaphores;
 
+		struct Settings {
+			bool overlay = true;
+		} settings;
+
 		std::vector<VkFence> waitFences;
 
 		void* deviceCreatepNextChain = nullptr;
@@ -205,6 +165,32 @@ namespace Voortman3D {
 		virtual VkResult createInstance();
 
 		virtual void setupDepthStencil();
+
+		virtual void GetEnabledFeatures() {};
+
+		virtual void GetEnabledExtensions() {};
+
+		/// <summary>
+		/// Function that does some preperation like loading 3D models etc
+		/// </summary>
+		virtual void prepare();
+
+		virtual void setupRenderPass();
+		virtual void setupFrameBuffer();
+
+		virtual void render() = 0;
+
+		virtual void buildCommandBuffers() {};
+
+		virtual void OnUpdateUIOverlay(UIOverlay* uioverlay) {};
+
+		_NODISCARD VkPipelineShaderStageCreateInfo loadShader(const std::string& fileName, VkShaderStageFlagBits stage);
+
+		void drawUI(const VkCommandBuffer commandbuffer);
+
+		void prepareFrame();
+
+		void submitFrame();
 
 	private:
 		HINSTANCE hInstance;
@@ -216,6 +202,20 @@ namespace Voortman3D {
 		void setupConsole(const std::wstring& title);
 
 		_NODISCARD inline static char* TO_CHAR(const wchar_t* string);
+
+		void handleMouseMove(const int32_t x, const int32_t y);
+		void nextFrame();
+		void createPipelineCache();
+		void createCommandPool();
+		void createSynchronizationPrimitives();
+		void initSwapchain();
+		void setupSwapChain();
+		void createCommandBuffers();
+		void destroyCommandBuffers();
+
+		void updateOverlay();
+
+		void windowResize();
 	};
 }
 
