@@ -68,5 +68,6 @@ namespace Voortman3D {
 		bool button(const char* caption);
 		bool colorPicker(const char* caption, float* color);
 		void text(const char* formatstr, ...);
+		bool inputFloat(const char* caption, float* value);
 	};
 }

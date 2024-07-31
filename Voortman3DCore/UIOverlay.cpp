@@ -1,5 +1,5 @@
 #include "UIOverlay.hpp"
-#include "Initializers.hpp"
+#include "Initializers.inl"
 
 namespace Voortman3D {
 	UIOverlay::UIOverlay()
@@ -468,5 +468,13 @@ namespace Voortman3D {
 		va_start(args, formatstr);
 		ImGui::TextV(formatstr, args);
 		va_end(args);
+	}
+
+	bool UIOverlay::inputFloat(const char* caption, float* value) {
+		bool res = ImGui::InputFloat(caption, value);
+		if (res) {
+			updated = true;
+		}
+		return res;
 	}
 }

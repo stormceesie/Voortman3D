@@ -8,12 +8,16 @@ namespace Voortman3D {
 
 		camera.type = Camera::CameraType::lookat;
 		camera.setPerspective(45.0f, (float)width / (float)height, 0.1f, 512.0f);
-		camera.setRotation(glm::vec3(-2.25f, -52.0f, 0.0f));
-		camera.setTranslation(glm::vec3(1.9f, -2.05f, -18.0f));
-		camera.rotationSpeed *= 0.25f;
+		camera.setRotation(glm::vec3(-26.5f, -37.0f, 0.0f));
+		camera.setTranslation(glm::vec3(0.07f, -0.06f, -0.6f));
+		camera.setRotationSpeed(0.25f);
+		camera.setMovementSpeed(0.5f);
 
 		enabledInstanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 		enabledDeviceExtensions.push_back(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
+
+		// Allocate TCconnection on heap memory as it is long time use
+		TCconnection = new TwinCATConnection();
 	}
 
 	void Voortman3D::GetEnabledFeatures() {
@@ -29,6 +33,9 @@ namespace Voortman3D {
 
 			if (pipelines.wireframe) _LIKELY
 				vkDestroyPipeline(device, pipelines.wireframe, nullptr);
+
+			if (TCconnection)
+				delete TCconnection;
 
 			vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 			vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
@@ -58,6 +65,23 @@ namespace Voortman3D {
 				buildCommandBuffers();
 			}
 
+			uioverlay->sliderFloat("R", &backgroundColor.float32[0], 0, 1);
+			uioverlay->sliderFloat("G", &backgroundColor.float32[1], 0, 1);
+			uioverlay->sliderFloat("B", &backgroundColor.float32[2], 0, 1);
+
+			uioverlay->inputFloat("Camera x", &camera.position.x);
+			uioverlay->inputFloat("Camera y", &camera.position.y);
+			uioverlay->inputFloat("Camera z", &camera.position.z);
+
+			uioverlay->inputFloat("Camera rx", &camera.rotation.x);
+			uioverlay->inputFloat("Camera ry", &camera.rotation.y);
+
+			// Imposible to rotate in Z so this can be done via a slider
+			uioverlay->sliderFloat("Camera rz", &camera.rotation.z, 0.f, 360.f);
+
+			TCconnection->ReadValue<float>(randomVariableKey, &sawHeight);
+			uioverlay->inputFloat("Saw Height", &sawHeight);
+
 			ImGui::NewLine();
 
 			ImGui::BeginChild("InnerRegion", ImVec2(200.0f * uioverlay->scale, 400.0f * uioverlay->scale), false);
@@ -70,7 +94,6 @@ namespace Voortman3D {
 				}
 			}
 			ImGui::EndChild();
-
 		}
 	}
 
@@ -196,14 +219,14 @@ namespace Voortman3D {
 	}
 
 	void Voortman3D::loadAssets() {
-		scene.loadFromFile("C:/Git/Vulkan/assets/models/gltf/glTF-Embedded/Buggy.gltf", vulkanDevice, queue);
+		scene.loadFromFile("C:/Users/f.kegler/Documents/untitled.gltf", vulkanDevice, queue);
 	}
 
 	void Voortman3D::buildCommandBuffers() {
 		VkCommandBufferBeginInfo cmdBufInfo = Initializers::commandBufferBeginInfo();
 
 		VkClearValue clearValues[2];
-		clearValues[0].color = { { 0.812f, 0.063f, 0.063f, 1.0f } };
+		clearValues[0].color = backgroundColor;
 		clearValues[1].depthStencil = { 1.0f, 0 };
 
 		VkRenderPassBeginInfo renderPassBeginInfo = Initializers::renderPassBeginInfo();
@@ -307,6 +330,15 @@ namespace Voortman3D {
 		Voortman3DCore::submitFrame();
 	}
 
+	void Voortman3D::TwinCATPreperation() {
+		// Connect to TwinCAT (local port 851)
+		TCconnection->ConnectToTwinCAT();
+
+		char szVar[] = { "MachineObjectsArray.Saw.pZ1Axis^.fActualPosition" };
+
+		TCconnection->CreateVariableHandle(randomVariableKey, szVar);
+	}
+
 	void Voortman3D::prepare() {
 		Voortman3DCore::prepare();
 		loadAssets();
@@ -315,6 +347,8 @@ namespace Voortman3D {
 		setupDescriptors();
 		preparePipelines();
 		buildCommandBuffers();
+		TwinCATPreperation();
+
 		prepared = true;
 	}
 

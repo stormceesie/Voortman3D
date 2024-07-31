@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Tools.hpp"
-#include "Initializers.hpp"
+#include "Initializers.inl"
 #include <concepts>
 
 namespace Voortman3D {

@@ -17,7 +17,7 @@
 #include "pch.h"
 
 #include "VulkanDevice.hpp"
-#include "Initializers.hpp"
+#include "Initializers.inl"
 
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include "tiny_gltf.h"

@@ -13,8 +13,13 @@ void main()
 	vec3 L = normalize(inLightVec);
 	vec3 V = normalize(inViewVec);
 	vec3 R = reflect(-L, N);
-	vec3 ambient = vec3(0.1);
+
+	// Verhoog de ambient en diffuse intensiteit
+	vec3 ambient = vec3(0.2);  // Lichte verhoging van de omgevingsverlichting
 	vec3 diffuse = max(dot(N, L), 0.0) * vec3(1.0);
-	vec3 specular = pow(max(dot(R, V), 0.0), 16.0) * vec3(0.75);
+	
+	// Verlaag de specular intensiteit en exponent
+	vec3 specular = pow(max(dot(R, V), 0.0), 8.0) * vec3(0.3); // Minder intens en bredere reflectie
+
 	outFragColor = vec4((ambient + diffuse) * inColor.rgb + specular, 1.0);		
 }

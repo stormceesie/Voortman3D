@@ -1,8 +1,8 @@
 #pragma once
 #include "Voortman3DCore.hpp"
 #include "resource.h"
-
 #include "VulkanglTFModel.hpp"
+#include "TwinCATConnection.hpp"
 
 namespace Voortman3D {
 	class Voortman3D final : public Voortman3DCore {
@@ -18,6 +18,12 @@ namespace Voortman3D {
 
 		bool wireframe = false;
 
+		const uint32_t randomVariableKey = 10;
+
+		float sawHeight{};
+
+		VkClearColorValue backgroundColor = { .958f, 1.f, .948f, 1.f };
+
 		struct UniformData {
 			glm::mat4 projection;
 			glm::mat4 view;
@@ -29,6 +35,8 @@ namespace Voortman3D {
 		Buffer conditionalBuffer;
 
 		VkPipelineLayout pipelineLayout{ VK_NULL_HANDLE };
+
+		TwinCATConnection* TCconnection;
 
 		struct Pipelines {
 			VkPipeline solid{ VK_NULL_HANDLE };
@@ -49,10 +57,11 @@ namespace Voortman3D {
 		void renderFrame();
 		void updateConditionalBuffer();
 		void prepareConditionalRendering();
+		void TwinCATPreperation();
 		void draw();
 
 		void OnUpdateUIOverlay(UIOverlay* uioverlay) override;
-		void prepare()			                     override;
+		void prepare()			                         override;
 		void GetEnabledFeatures()                    override;
 		void render()                                override;
 	};

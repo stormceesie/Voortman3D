@@ -5,7 +5,7 @@
 #include "Tools.hpp"
 #include "VulkanDevice.hpp"
 #include "VulkanSwapChain.hpp"
-#include "Initializers.hpp"
+#include "Initializers.inl"
 #include "Camera.hpp"
 #include "VulkanTexture.h"
 #include "UIOverlay.hpp"

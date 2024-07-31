@@ -9,7 +9,7 @@
 #include "pch.h"
 
 #include "VulkanTexture.h"
-#include "Initializers.hpp"
+#include "Initializers.inl"
 
 namespace Voortman3D
 {

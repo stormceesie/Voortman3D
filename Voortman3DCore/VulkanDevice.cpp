@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "VulkanDevice.hpp"
-#include "Initializers.hpp"
+#include "Initializers.inl"
 #include "Tools.hpp"
 
 namespace Voortman3D {

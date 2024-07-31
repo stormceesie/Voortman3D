@@ -544,7 +544,7 @@ namespace Voortman3D {
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
 		ImGui::SetNextWindowPos(ImVec2(10 * uiOverlay.scale, 10 * uiOverlay.scale));
 		ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiSetCond_FirstUseEver);
-		ImGui::Begin("CTO Conditional Rendering", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+		ImGui::Begin("VB1250 Simulation", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 		ImGui::TextUnformatted(deviceProperties.deviceName);
 		ImGui::Text("%.2f ms/frame (%.1d fps)", (1000.0f / lastFPS), lastFPS);
 
@@ -653,7 +653,7 @@ namespace Voortman3D {
 	}
 
 	void Voortman3DCore::windowResize() {
-		if (!prepared)
+		if (!prepared || !windowOpen)
 		{
 			return;
 		}
@@ -667,8 +667,7 @@ namespace Voortman3D {
 		width = destWidth;
 		height = destHeight;
 
-		if (windowOpen)
-			setupSwapChain();
+		setupSwapChain();
 
 		// Recreate the frame buffers
 		vkDestroyImageView(device, depthStencil.view, nullptr);
@@ -787,7 +786,7 @@ namespace Voortman3D {
 			viewUpdated = true;
 		}
 		if (mouseButtons.middle) {
-			camera.translate(glm::vec3(-dx * 0.005f, -dy * 0.005f, 0.0f));
+			camera.translate(glm::vec3(-dx * 0.0005f, -dy * 0.0005f, 0.0f));
 			viewUpdated = true;
 		}
 
@@ -819,46 +818,6 @@ namespace Voortman3D {
 				PostQuitMessage(0);
 				break;
 			}
-
-			if (camera.type == Camera::firstperson) _UNLIKELY // Wont be used probalbly by Voortman
-			{
-				switch (wParam)
-				{
-				case KEY_W:
-					camera.keys.up = true;
-					break;
-				case KEY_S:
-					camera.keys.down = true;
-					break;
-				case KEY_A:
-					camera.keys.left = true;
-					break;
-				case KEY_D:
-					camera.keys.right = true;
-					break;
-				}
-			}
-
-			break;
-		case WM_KEYUP:
-			if (camera.type == Camera::firstperson) _UNLIKELY // Wont be used probably by Voortman
-			{
-				switch (wParam)
-				{
-				case KEY_W:
-					camera.keys.up = false;
-					break;
-				case KEY_S:
-					camera.keys.down = false;
-					break;
-				case KEY_A:
-					camera.keys.left = false;
-					break;
-				case KEY_D:
-					camera.keys.right = false;
-					break;
-				}
-			}
 			break;
 		case WM_LBUTTONDOWN: // Often used keys wont be getting any attributes because this really depends on the user
 			mousePos = glm::vec2((float)LOWORD(lParam), (float)HIWORD(lParam));
@@ -884,7 +843,7 @@ namespace Voortman3D {
 		case WM_MOUSEWHEEL:
 		{
 			short wheelDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-			camera.translate(glm::vec3(0.0f, 0.0f, (float)wheelDelta * 0.005f));
+			camera.translate(glm::vec3(0.0f, 0.0f, (float)wheelDelta * 0.0005f));
 			viewUpdated = true;
 			break;
 		}
