@@ -22,7 +22,7 @@ namespace Voortman3D {
 
 		float sawHeight{};
 
-		VkClearColorValue backgroundColor = { .958f, 1.f, .948f, 1.f };
+		VkClearColorValue backgroundColor = { 1.f, 1.f, 1.f, 1.f };
 
 		struct UniformData {
 			glm::mat4 projection;

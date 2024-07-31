@@ -65,20 +65,6 @@ namespace Voortman3D {
 				buildCommandBuffers();
 			}
 
-			uioverlay->sliderFloat("R", &backgroundColor.float32[0], 0, 1);
-			uioverlay->sliderFloat("G", &backgroundColor.float32[1], 0, 1);
-			uioverlay->sliderFloat("B", &backgroundColor.float32[2], 0, 1);
-
-			uioverlay->inputFloat("Camera x", &camera.position.x);
-			uioverlay->inputFloat("Camera y", &camera.position.y);
-			uioverlay->inputFloat("Camera z", &camera.position.z);
-
-			uioverlay->inputFloat("Camera rx", &camera.rotation.x);
-			uioverlay->inputFloat("Camera ry", &camera.rotation.y);
-
-			// Imposible to rotate in Z so this can be done via a slider
-			uioverlay->sliderFloat("Camera rz", &camera.rotation.z, 0.f, 360.f);
-
 			TCconnection->ReadValue<float>(randomVariableKey, &sawHeight);
 			uioverlay->inputFloat("Saw Height", &sawHeight);
 
