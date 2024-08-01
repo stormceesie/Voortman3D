@@ -144,12 +144,12 @@ namespace Voortman3D {
 		/*
 			glTF default vertex layout with easy Vulkan mapping functions
 		*/
-		enum class VertexComponent { Position, Normal, UV, Color};
+		enum class VertexComponent { Position, Normal, Color};
 
+		// GLTF supports more but these are the only things we use...
 		struct Vertex {
 			glm::vec3 pos;
 			glm::vec3 normal;
-			glm::vec2 uv;
 			glm::vec4 color;
 
 			static VkVertexInputBindingDescription vertexInputBindingDescription;
@@ -211,7 +211,6 @@ namespace Voortman3D {
 				float radius;
 			} dimensions{};
 
-			bool metallicRoughnessWorkflow = true;
 			bool buffersBound = false;
 			std::string path;
 

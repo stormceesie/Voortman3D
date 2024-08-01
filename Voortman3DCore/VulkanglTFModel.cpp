@@ -544,8 +544,6 @@ namespace Voortman3D {
 			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos) });
 		case VertexComponent::Normal:
 			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal) });
-		case VertexComponent::UV:
-			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv) });
 		case VertexComponent::Color:
 			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, color) });
 		default:
@@ -597,12 +595,11 @@ namespace Voortman3D {
 			descriptorSetLayoutImage = VK_NULL_HANDLE;
 		}
 		vkDestroyDescriptorPool(device->logicalDevice, descriptorPool, nullptr);
-		emptyTexture.destroy();
 	}
 
 	void vkglTF::Model::loadNode(vkglTF::Node* parent, const tinygltf::Node& node, uint32_t nodeIndex, const tinygltf::Model& model, std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer, float globalscale)
 	{
-		vkglTF::Node* newNode = new(std::nothrow) Node{};
+		vkglTF::Node* newNode = new Node{};
 		newNode->index = nodeIndex;
 		newNode->parent = parent;
 		newNode->name = node.name;
@@ -641,7 +638,7 @@ namespace Voortman3D {
 		// Node contains mesh data
 		if (node.mesh > -1) {
 			const tinygltf::Mesh mesh = model.meshes[node.mesh];
-			Mesh* newMesh = new(std::nothrow) Mesh(device, newNode->matrix);
+			Mesh* newMesh = new Mesh(device, newNode->matrix);
 			newMesh->name = mesh.name;
 			for (size_t j = 0; j < mesh.primitives.size(); j++) {
 				const tinygltf::Primitive& primitive = mesh.primitives[j];
@@ -654,7 +651,6 @@ namespace Voortman3D {
 				uint32_t vertexCount = 0;
 				glm::vec3 posMin{};
 				glm::vec3 posMax{};
-				bool hasSkin = false;
 				// Vertices
 				{
 					const float* bufferPos = nullptr;
@@ -680,13 +676,6 @@ namespace Voortman3D {
 						const tinygltf::BufferView& normView = model.bufferViews[normAccessor.bufferView];
 						bufferNormals = reinterpret_cast<const float*>(&(model.buffers[normView.buffer].data[normAccessor.byteOffset + normView.byteOffset]));
 					}
-
-					if (primitive.attributes.find("TEXCOORD_0") != primitive.attributes.end()) {
-						const tinygltf::Accessor& uvAccessor = model.accessors[primitive.attributes.find("TEXCOORD_0")->second];
-						const tinygltf::BufferView& uvView = model.bufferViews[uvAccessor.bufferView];
-						bufferTexCoords = reinterpret_cast<const float*>(&(model.buffers[uvView.buffer].data[uvAccessor.byteOffset + uvView.byteOffset]));
-					}
-
 					if (primitive.attributes.find("COLOR_0") != primitive.attributes.end())
 					{
 						const tinygltf::Accessor& colorAccessor = model.accessors[primitive.attributes.find("COLOR_0")->second];
@@ -696,36 +685,12 @@ namespace Voortman3D {
 						bufferColors = reinterpret_cast<const float*>(&(model.buffers[colorView.buffer].data[colorAccessor.byteOffset + colorView.byteOffset]));
 					}
 
-					if (primitive.attributes.find("TANGENT") != primitive.attributes.end())
-					{
-						const tinygltf::Accessor& tangentAccessor = model.accessors[primitive.attributes.find("TANGENT")->second];
-						const tinygltf::BufferView& tangentView = model.bufferViews[tangentAccessor.bufferView];
-						bufferTangents = reinterpret_cast<const float*>(&(model.buffers[tangentView.buffer].data[tangentAccessor.byteOffset + tangentView.byteOffset]));
-					}
-
-					// Skinning
-					// Joints
-					if (primitive.attributes.find("JOINTS_0") != primitive.attributes.end()) {
-						const tinygltf::Accessor& jointAccessor = model.accessors[primitive.attributes.find("JOINTS_0")->second];
-						const tinygltf::BufferView& jointView = model.bufferViews[jointAccessor.bufferView];
-						bufferJoints = reinterpret_cast<const uint16_t*>(&(model.buffers[jointView.buffer].data[jointAccessor.byteOffset + jointView.byteOffset]));
-					}
-
-					if (primitive.attributes.find("WEIGHTS_0") != primitive.attributes.end()) {
-						const tinygltf::Accessor& uvAccessor = model.accessors[primitive.attributes.find("WEIGHTS_0")->second];
-						const tinygltf::BufferView& uvView = model.bufferViews[uvAccessor.bufferView];
-						bufferWeights = reinterpret_cast<const float*>(&(model.buffers[uvView.buffer].data[uvAccessor.byteOffset + uvView.byteOffset]));
-					}
-
-					hasSkin = (bufferJoints && bufferWeights);
-
 					vertexCount = static_cast<uint32_t>(posAccessor.count);
 
 					for (size_t v = 0; v < posAccessor.count; v++) {
 						Vertex vert{};
 						vert.pos = glm::vec4(glm::make_vec3(&bufferPos[v * 3]), 1.0f);
 						vert.normal = glm::normalize(glm::vec3(bufferNormals ? glm::make_vec3(&bufferNormals[v * 3]) : glm::vec3(0.0f)));
-						vert.uv = bufferTexCoords ? glm::make_vec2(&bufferTexCoords[v * 2]) : glm::vec3(0.0f);
 						if (bufferColors) {
 							switch (numColorComponents) {
 							case 3:
@@ -781,7 +746,8 @@ namespace Voortman3D {
 						return;
 					}
 				}
-				Primitive* newPrimitive = new(std::nothrow) Primitive(indexStart, indexCount, primitive.material > -1 ? materials[primitive.material] : materials.back());
+				Primitive* newPrimitive = new Primitive(indexStart, indexCount, primitive.material > -1 ? materials[primitive.material] : materials.back());
+
 				newPrimitive->firstVertex = vertexStart;
 				newPrimitive->vertexCount = vertexCount;
 				newPrimitive->setDimensions(posMin, posMax);
@@ -883,13 +849,6 @@ namespace Voortman3D {
 						}
 					}
 				}
-			}
-		}
-
-		for (auto extension : gltfModel.extensionsUsed) {
-			if (extension == "KHR_materials_pbrSpecularGlossiness") {
-				std::cout << "Required extension: " << extension;
-				metallicRoughnessWorkflow = false;
 			}
 		}
 

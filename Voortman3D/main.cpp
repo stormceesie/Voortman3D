@@ -190,7 +190,7 @@ namespace Voortman3D {
 		pipelineCI.pViewportState = &viewportStateCI;
 		pipelineCI.pDepthStencilState = &depthStencilStateCI;
 		pipelineCI.pDynamicState = &dynamicStateCI;
-		pipelineCI.pVertexInputState = vkglTF::Vertex::getPipelineVertexInputState({ vkglTF::VertexComponent::Position, vkglTF::VertexComponent::Normal, vkglTF::VertexComponent::UV });
+		pipelineCI.pVertexInputState = vkglTF::Vertex::getPipelineVertexInputState({ vkglTF::VertexComponent::Position, vkglTF::VertexComponent::Normal, vkglTF::VertexComponent::Color });
 
 		VkPipelineShaderStageCreateInfo VertexShader = loadShader("Shaders/model.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		VkPipelineShaderStageCreateInfo FragmentShader = loadShader("Shaders/model.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
