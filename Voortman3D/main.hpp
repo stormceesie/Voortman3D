@@ -3,6 +3,7 @@
 #include "resource.h"
 #include "VulkanglTFModel.hpp"
 #include "TwinCATConnection.hpp"
+#include "ThreadPool.hpp"
 
 namespace Voortman3D {
 	class Voortman3D final : public Voortman3DCore {
@@ -22,6 +23,14 @@ namespace Voortman3D {
 
 		double sawHeight{};
 
+		int32_t numThreads{ 0 };
+
+		uint32_t numObjectsPerThread{ 0 };
+
+		std::vector<uint32_t> ObjectsPerThread;
+
+		ThreadPool threadPool{};
+
 		VkClearColorValue backgroundColor = { 1.f, 1.f, 1.f, 1.f };
 
 		struct UniformData {
@@ -30,6 +39,14 @@ namespace Voortman3D {
 			glm::mat4 model;
 		} uniformData;
 		Buffer uniformBuffer;
+
+		struct ThreadData {
+			VkCommandPool commandPool{ VK_NULL_HANDLE };
+			std::vector<VkCommandBuffer> commandBuffer;
+			std::vector<vkglTF::Node*> processNodes;
+		};
+
+		std::vector<ThreadData> threadData;
 
 		std::vector<int32_t> conditionalVisibility{};
 		Buffer conditionalBuffer;

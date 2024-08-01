@@ -484,4 +484,9 @@ namespace Voortman3D {
 			updated = true;
 		return result;
 	}
+
+	bool UIOverlay::displayInt(const char* caption, int* value) {
+		bool result = ImGui::InputInt(caption, value, 0, 0, ImGuiInputTextFlags_ReadOnly);
+		return result; // This will always be false because the field is disabled
+	}
 }

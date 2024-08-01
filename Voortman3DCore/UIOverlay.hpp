@@ -70,5 +70,6 @@ namespace Voortman3D {
 		void text(const char* formatstr, ...);
 		bool inputFloat(const char* caption, float* value);
 		bool inputDouble(const char* caption, double* value);
+		bool displayInt(const char* caption, int* value);
 	};
 }

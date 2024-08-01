@@ -12,6 +12,11 @@ namespace Voortman3D {
 		camera.setRotationSpeed(0.25f);
 		camera.setMovementSpeed(0.5f);
 
+		numThreads = std::thread::hardware_concurrency();
+		assert(numThreads > 0);
+
+		threadPool.setThreadCount(numThreads);
+
 		enabledInstanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 		enabledDeviceExtensions.push_back(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
 
@@ -64,6 +69,8 @@ namespace Voortman3D {
 				buildCommandBuffers();
 			}
 
+			uioverlay->displayInt("Threads", &numThreads);
+			
 				// Read value from TwinCAT every 16 frames 
 				// maybe this should be time based instead of frame based because in immediate mode the frames can be come very high
 			if (!(frameCounter & 0b1111))
@@ -212,6 +219,15 @@ namespace Voortman3D {
 
 	void Voortman3D::loadAssets() {
 		scene.loadFromFile("C:/Users/f.kegler/Documents/untitled.gltf", vulkanDevice, queue);
+
+		uint32_t numObjectsPerThread = scene.linearNodes.size() / numThreads;
+
+		uint32_t numRemainingObjects = scene.linearNodes.size() % numThreads;
+
+		ObjectsPerThread.resize(numThreads, numObjectsPerThread);
+
+		for (int32_t i = 0; i < numRemainingObjects; i++)
+			ObjectsPerThread[i]++;
 	}
 
 	void Voortman3D::buildCommandBuffers() {
@@ -301,6 +317,36 @@ namespace Voortman3D {
 			Copy visibility data
 		*/
 		updateConditionalBuffer();
+
+		threadData.resize(numThreads);
+
+		int32_t nodeIndex = 0;
+
+		for (uint32_t i = 0; i < numThreads; i++) {
+			ThreadData* threaddata = &threaddata[i];
+
+			VkCommandPoolCreateInfo cmdPoolInfo = Initializers::commandPoolCreateInfo();
+			cmdPoolInfo.queueFamilyIndex = swapChain.queueNodeIndex;
+			cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+			VK_CHECK_RESULT(vkCreateCommandPool(device, &cmdPoolInfo, nullptr, &threaddata->commandPool));
+
+			// One secondary command buffer per object that is updated by this thread
+			threaddata->commandBuffer.resize(numObjectsPerThread);
+			// Generate secondary command buffers for each thread
+			VkCommandBufferAllocateInfo secondaryCmdBufAllocateInfo =
+				Initializers::commandBufferAllocateInfo(
+					threaddata->commandPool,
+					VK_COMMAND_BUFFER_LEVEL_SECONDARY,
+					static_cast<uint32_t>(threaddata->commandBuffer.size()));
+			VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &secondaryCmdBufAllocateInfo, threaddata->commandBuffer.data()));
+
+			// Resize the vector to the amount of objects that it needs to process every update
+			threaddata->processNodes.resize(ObjectsPerThread[i]);
+
+			for (uint32_t j = 0; j < ObjectsPerThread[i]; j++) {
+				threaddata->processNodes.push_back(scene.linearNodes[nodeIndex++]);
+			}
+		}
 	}
 
 	void Voortman3D::updateConditionalBuffer() {
