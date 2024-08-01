@@ -182,10 +182,6 @@ namespace Voortman3D {
 			glTF model loading and rendering class
 		*/
 		class Model {
-		private:
-			vkglTF::Texture emptyTexture;
-
-			void createEmptyTexture(VkQueue transferQueue);
 		public:
 			VulkanDevice* device{VK_NULL_HANDLE};
 			VkDescriptorPool descriptorPool{VK_NULL_HANDLE};
