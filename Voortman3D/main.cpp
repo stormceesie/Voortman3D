@@ -6,7 +6,6 @@ namespace Voortman3D {
 		this->name = L"Voortman3D";
 		this->icon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
 
-		camera.type = Camera::CameraType::lookat;
 		camera.setPerspective(45.0f, (float)width / (float)height, 0.1f, 512.0f);
 		camera.setRotation(glm::vec3(-26.5f, -37.0f, 0.0f));
 		camera.setTranslation(glm::vec3(0.07f, -0.06f, -0.6f));

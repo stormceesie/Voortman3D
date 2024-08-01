@@ -19,9 +19,6 @@ namespace Voortman3D {
 
 		void updateViewMatrix();
 	public:
-		enum CameraType { lookat, firstperson };
-		CameraType type = CameraType::lookat;
-
 		glm::vec3 rotation = glm::vec3();
 		glm::vec3 position = glm::vec3();
 		glm::vec4 viewPos = glm::vec4();

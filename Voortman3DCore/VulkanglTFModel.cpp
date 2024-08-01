@@ -548,7 +548,6 @@ namespace Voortman3D {
 			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv) });
 		case VertexComponent::Color:
 			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, color) });
-		case VertexComponent::Tangent:
 		default:
 			return VkVertexInputAttributeDescription({});
 		}
