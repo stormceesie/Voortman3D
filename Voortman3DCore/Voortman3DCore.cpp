@@ -55,7 +55,7 @@ namespace Voortman3D {
 
 	char* Voortman3DCore::TO_CHAR(const wchar_t* string) {
 		size_t len = wcslen(string) + 1;
-		char* c_string = new char[len];
+		char* c_string = new(std::nothrow) char[len];
 		size_t numCharsRead;
 		wcstombs_s(&numCharsRead, c_string, len, string, _TRUNCATE);
 		return c_string;
@@ -272,7 +272,7 @@ namespace Voortman3D {
 
 		GetEnabledFeatures();
 
-		vulkanDevice = new VulkanDevice(physicalDevice);
+		vulkanDevice = new(std::nothrow) VulkanDevice(physicalDevice);
 
 		GetEnabledExtensions();
 

@@ -23,7 +23,7 @@ namespace Voortman3D {
       AdsSyncReadReq(&Addr, ADSIGRP_SYM_VALBYHND, variableHandle, sizeof(T), data);
     };
 
-    void CreateVariableHandle(const uint32_t key, char szVar[]);
+    void CreateVariableHandle(const uint32_t key);
 
     ~TwinCATConnection();
 

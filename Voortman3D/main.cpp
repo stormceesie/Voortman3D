@@ -65,8 +65,12 @@ namespace Voortman3D {
 				buildCommandBuffers();
 			}
 
-			TCconnection->ReadValue<float>(randomVariableKey, &sawHeight);
-			uioverlay->inputFloat("Saw Height", &sawHeight);
+				// Read value from TwinCAT every 16 frames 
+				// maybe this should be time based instead of frame based because in immediate mode the frames can be come very high
+			if (!(frameCounter & 0b1111))
+				TCconnection->ReadValue<double>(randomVariableKey, &sawHeight);
+			
+			uioverlay->inputDouble("Saw Height", &sawHeight);
 
 			ImGui::NewLine();
 
@@ -189,9 +193,12 @@ namespace Voortman3D {
 		pipelineCI.pDynamicState = &dynamicStateCI;
 		pipelineCI.pVertexInputState = vkglTF::Vertex::getPipelineVertexInputState({ vkglTF::VertexComponent::Position, vkglTF::VertexComponent::Normal, vkglTF::VertexComponent::UV });
 
+		VkPipelineShaderStageCreateInfo VertexShader = loadShader("Shaders/model.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+		VkPipelineShaderStageCreateInfo FragmentShader = loadShader("Shaders/model.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
 		const std::array<VkPipelineShaderStageCreateInfo, 2> shaderStagesRender = {
-			loadShader("Shaders/model.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
-			loadShader("Shaders/model.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
+			VertexShader,
+			FragmentShader
 		};
 
 		pipelineCI.stageCount = static_cast<uint32_t>(shaderStagesRender.size());
@@ -238,6 +245,7 @@ namespace Voortman3D {
 
 			vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
 
+			// Choose wether we bind the wireframe pipeline or the solid pipeline
 			vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? pipelines.wireframe : pipelines.solid);
 
 			const VkDeviceSize offsets[1] = { 0 };
@@ -320,9 +328,7 @@ namespace Voortman3D {
 		// Connect to TwinCAT (local port 851)
 		TCconnection->ConnectToTwinCAT();
 
-		char szVar[] = { "MachineObjectsArray.Saw.pZ1Axis^.fActualPosition" };
-
-		TCconnection->CreateVariableHandle(randomVariableKey, szVar);
+		TCconnection->CreateVariableHandle(randomVariableKey);
 	}
 
 	void Voortman3D::prepare() {

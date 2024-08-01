@@ -20,7 +20,7 @@ namespace Voortman3D {
 
 		const uint32_t randomVariableKey = 10;
 
-		float sawHeight{};
+		double sawHeight{};
 
 		VkClearColorValue backgroundColor = { 1.f, 1.f, 1.f, 1.f };
 

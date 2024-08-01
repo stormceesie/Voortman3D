@@ -18,10 +18,10 @@ namespace Voortman3D {
 	*/
 	struct Buffer
 	{
-		VkDevice device;
-		VkBuffer buffer = VK_NULL_HANDLE;
-		VkDeviceMemory memory = VK_NULL_HANDLE;
-		VkDescriptorBufferInfo descriptor;
+		VkDevice device{ VK_NULL_HANDLE };
+		VkBuffer buffer{VK_NULL_HANDLE};
+		VkDeviceMemory memory{VK_NULL_HANDLE};
+		VkDescriptorBufferInfo descriptor{VK_NULL_HANDLE};
 		VkDeviceSize size = 0;
 		VkDeviceSize alignment = 0;
 		void* mapped = nullptr;

@@ -477,4 +477,11 @@ namespace Voortman3D {
 		}
 		return res;
 	}
+
+	bool UIOverlay::inputDouble(const char* caption, double* value) {
+		bool result = ImGui::InputDouble(caption, value);
+		if (result)
+			updated = true;
+		return result;
+	}
 }

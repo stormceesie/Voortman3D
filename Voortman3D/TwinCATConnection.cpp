@@ -37,10 +37,13 @@ namespace Voortman3D {
     AdsPortClose();
   }
 
-  void TwinCATConnection::CreateVariableHandle(const uint32_t key, char szVar[]) {
+  void TwinCATConnection::CreateVariableHandle(const uint32_t key) {
     if (variableHandles.contains(key)) _UNLIKELY return; // Already contains the key -> return
     
     ULONG VariableHandle;
+
+
+    char szVar[] = { "MAIN.fSawHeight" };
 
     long nErr = AdsSyncReadWriteReq(&Addr, ADSIGRP_SYM_HNDBYNAME, 0x0, sizeof(VariableHandle), &VariableHandle, sizeof(szVar), szVar);
 

@@ -96,7 +96,7 @@ namespace Voortman3D {
 				// Most devices don't support RGB only on Vulkan so convert if necessary
 				// TODO: Check actual format support and transform only if required
 				bufferSize = gltfimage.width * gltfimage.height * 4;
-				buffer = new unsigned char[bufferSize];
+				buffer = new(std::nothrow) unsigned char[bufferSize];
 				unsigned char* rgba = buffer;
 				unsigned char* rgb = &gltfimage.image[0];
 				for (size_t i = 0; i < gltfimage.width * gltfimage.height; ++i) {
@@ -447,17 +447,6 @@ namespace Voortman3D {
 			writeDescriptorSet.pImageInfo = &baseColorTexture->descriptor;
 			writeDescriptorSets.push_back(writeDescriptorSet);
 		}
-		if (normalTexture && descriptorBindingFlags & DescriptorBindingFlags::ImageNormalMap) {
-			imageDescriptors.push_back(normalTexture->descriptor);
-			VkWriteDescriptorSet writeDescriptorSet{};
-			writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			writeDescriptorSet.descriptorCount = 1;
-			writeDescriptorSet.dstSet = descriptorSet;
-			writeDescriptorSet.dstBinding = static_cast<uint32_t>(writeDescriptorSets.size());
-			writeDescriptorSet.pImageInfo = &normalTexture->descriptor;
-			writeDescriptorSets.push_back(writeDescriptorSet);
-		}
 		vkUpdateDescriptorSets(device->logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
 	}
 
@@ -478,16 +467,16 @@ namespace Voortman3D {
 	*/
 	vkglTF::Mesh::Mesh(VulkanDevice* device, glm::mat4 matrix) {
 		this->device = device;
-		this->uniformBlock.matrix = matrix;
+		this->matrix = matrix;
 		VK_CHECK_RESULT(device->createBuffer(
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			sizeof(uniformBlock),
+			sizeof(matrix),
 			&uniformBuffer.buffer,
 			&uniformBuffer.memory,
-			&uniformBlock));
-		VK_CHECK_RESULT(vkMapMemory(device->logicalDevice, uniformBuffer.memory, 0, sizeof(uniformBlock), 0, &uniformBuffer.mapped));
-		uniformBuffer.descriptor = { uniformBuffer.buffer, 0, sizeof(uniformBlock) };
+			&matrix));
+		VK_CHECK_RESULT(vkMapMemory(device->logicalDevice, uniformBuffer.memory, 0, sizeof(matrix), 0, &uniformBuffer.mapped));
+		uniformBuffer.descriptor = { uniformBuffer.buffer, 0, sizeof(matrix) };
 	};
 
 	vkglTF::Mesh::~Mesh() {
@@ -506,37 +495,23 @@ namespace Voortman3D {
 		return glm::translate(glm::mat4(1.0f), translation) * glm::mat4(rotation) * glm::scale(glm::mat4(1.0f), scale) * matrix;
 	}
 
+	// Multiply yourself with your parent till there is no parent anymore
+	// This will result in the orientation matrix in the world where this node needs to be
 	glm::mat4 vkglTF::Node::getMatrix() {
 		glm::mat4 m = localMatrix();
-		vkglTF::Node* p = parent;
-		while (p) {
-			m = p->localMatrix() * m;
-			p = p->parent;
-		}
-		return m;
+		if (parent)
+			return m * parent->getMatrix();
+		else
+			return m;
 	}
 
 	void vkglTF::Node::update() {
 		if (mesh) {
-			glm::mat4 m = getMatrix();
-			if (skin) {
-				mesh->uniformBlock.matrix = m;
-				// Update join matrices
-				glm::mat4 inverseTransform = glm::inverse(m);
-				for (size_t i = 0; i < skin->joints.size(); i++) {
-					vkglTF::Node* jointNode = skin->joints[i];
-					glm::mat4 jointMat = jointNode->getMatrix() * skin->inverseBindMatrices[i];
-					jointMat = inverseTransform * jointMat;
-					mesh->uniformBlock.jointMatrix[i] = jointMat;
-				}
-				mesh->uniformBlock.jointcount = (float)skin->joints.size();
-				memcpy(mesh->uniformBuffer.mapped, &mesh->uniformBlock, sizeof(mesh->uniformBlock));
-			}
-			else {
-				memcpy(mesh->uniformBuffer.mapped, &m, sizeof(glm::mat4));
-			}
+			glm::mat4x4 matrix = getMatrix();
+			memcpy(mesh->uniformBuffer.mapped, &matrix, sizeof(glm::mat4));
 		}
 
+		// Also update all children
 		for (auto& child : children) {
 			child->update();
 		}
@@ -574,11 +549,6 @@ namespace Voortman3D {
 		case VertexComponent::Color:
 			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, color) });
 		case VertexComponent::Tangent:
-			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, tangent) });
-		case VertexComponent::Joint0:
-			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, joint0) });
-		case VertexComponent::Weight0:
-			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, weight0) });
 		default:
 			return VkVertexInputAttributeDescription({});
 		}
@@ -606,15 +576,6 @@ namespace Voortman3D {
 		return &pipelineVertexInputStateCreateInfo;
 	}
 
-	vkglTF::Texture* vkglTF::Model::getTexture(uint32_t index)
-	{
-
-		if (index < textures.size()) {
-			return &textures[index];
-		}
-		return nullptr;
-	}
-
 	void vkglTF::Model::createEmptyTexture(VkQueue transferQueue)
 	{
 		emptyTexture.device = device;
@@ -624,7 +585,7 @@ namespace Voortman3D {
 		emptyTexture.mipLevels = 1;
 
 		size_t bufferSize = emptyTexture.width * emptyTexture.height * 4;
-		unsigned char* buffer = new unsigned char[bufferSize];
+		unsigned char* buffer = new(std::nothrow) unsigned char[bufferSize];
 		memset(buffer, 0, bufferSize);
 
 		VkBuffer stagingBuffer;
@@ -727,15 +688,10 @@ namespace Voortman3D {
 		vkFreeMemory(device->logicalDevice, vertices.memory, nullptr);
 		vkDestroyBuffer(device->logicalDevice, indices.buffer, nullptr);
 		vkFreeMemory(device->logicalDevice, indices.memory, nullptr);
-		for (auto texture : textures) {
-			texture.destroy();
-		}
 		for (auto node : nodes) {
 			delete node;
 		}
-		for (auto skin : skins) {
-			delete skin;
-		}
+
 		if (descriptorSetLayoutUbo != VK_NULL_HANDLE) {
 			vkDestroyDescriptorSetLayout(device->logicalDevice, descriptorSetLayoutUbo, nullptr);
 			descriptorSetLayoutUbo = VK_NULL_HANDLE;
@@ -750,11 +706,10 @@ namespace Voortman3D {
 
 	void vkglTF::Model::loadNode(vkglTF::Node* parent, const tinygltf::Node& node, uint32_t nodeIndex, const tinygltf::Model& model, std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer, float globalscale)
 	{
-		vkglTF::Node* newNode = new Node{};
+		vkglTF::Node* newNode = new(std::nothrow) Node{};
 		newNode->index = nodeIndex;
 		newNode->parent = parent;
 		newNode->name = node.name;
-		newNode->skinIndex = node.skin;
 		newNode->matrix = glm::mat4(1.0f);
 
 		// Generate local node matrix
@@ -790,7 +745,7 @@ namespace Voortman3D {
 		// Node contains mesh data
 		if (node.mesh > -1) {
 			const tinygltf::Mesh mesh = model.meshes[node.mesh];
-			Mesh* newMesh = new Mesh(device, newNode->matrix);
+			Mesh* newMesh = new(std::nothrow) Mesh(device, newNode->matrix);
 			newMesh->name = mesh.name;
 			for (size_t j = 0; j < mesh.primitives.size(); j++) {
 				const tinygltf::Primitive& primitive = mesh.primitives[j];
@@ -886,9 +841,6 @@ namespace Voortman3D {
 						else {
 							vert.color = glm::vec4(1.0f);
 						}
-						vert.tangent = bufferTangents ? glm::vec4(glm::make_vec4(&bufferTangents[v * 4])) : glm::vec4(0.0f);
-						vert.joint0 = hasSkin ? glm::vec4(glm::make_vec4(&bufferJoints[v * 4])) : glm::vec4(0.0f);
-						vert.weight0 = hasSkin ? glm::make_vec4(&bufferWeights[v * 4]) : glm::vec4(0.0f);
 						vertexBuffer.push_back(vert);
 					}
 				}
@@ -902,7 +854,7 @@ namespace Voortman3D {
 
 					switch (accessor.componentType) {
 					case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT: {
-						uint32_t* buf = new uint32_t[accessor.count];
+						uint32_t* buf = new(std::nothrow) uint32_t[accessor.count];
 						memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(uint32_t));
 						for (size_t index = 0; index < accessor.count; index++) {
 							indexBuffer.push_back(buf[index] + vertexStart);
@@ -911,7 +863,7 @@ namespace Voortman3D {
 						break;
 					}
 					case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT: {
-						uint16_t* buf = new uint16_t[accessor.count];
+						uint16_t* buf = new(std::nothrow) uint16_t[accessor.count];
 						memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(uint16_t));
 						for (size_t index = 0; index < accessor.count; index++) {
 							indexBuffer.push_back(buf[index] + vertexStart);
@@ -920,7 +872,7 @@ namespace Voortman3D {
 						break;
 					}
 					case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE: {
-						uint8_t* buf = new uint8_t[accessor.count];
+						uint8_t* buf = new(std::nothrow) uint8_t[accessor.count];
 						memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(uint8_t));
 						for (size_t index = 0; index < accessor.count; index++) {
 							indexBuffer.push_back(buf[index] + vertexStart);
@@ -933,7 +885,7 @@ namespace Voortman3D {
 						return;
 					}
 				}
-				Primitive* newPrimitive = new Primitive(indexStart, indexCount, primitive.material > -1 ? materials[primitive.material] : materials.back());
+				Primitive* newPrimitive = new(std::nothrow) Primitive(indexStart, indexCount, primitive.material > -1 ? materials[primitive.material] : materials.back());
 				newPrimitive->firstVertex = vertexStart;
 				newPrimitive->vertexCount = vertexCount;
 				newPrimitive->setDimensions(posMin, posMax);
@@ -950,213 +902,18 @@ namespace Voortman3D {
 		linearNodes.push_back(newNode);
 	}
 
-	void vkglTF::Model::loadSkins(tinygltf::Model& gltfModel)
-	{
-		for (tinygltf::Skin& source : gltfModel.skins) {
-			Skin* newSkin = new Skin{};
-			newSkin->name = source.name;
-
-			// Find skeleton root node
-			if (source.skeleton > -1) {
-				newSkin->skeletonRoot = nodeFromIndex(source.skeleton);
-			}
-
-			// Find joint nodes
-			for (int jointIndex : source.joints) {
-				Node* node = nodeFromIndex(jointIndex);
-				if (node) {
-					newSkin->joints.push_back(nodeFromIndex(jointIndex));
-				}
-			}
-
-			// Get inverse bind matrices from buffer
-			if (source.inverseBindMatrices > -1) {
-				const tinygltf::Accessor& accessor = gltfModel.accessors[source.inverseBindMatrices];
-				const tinygltf::BufferView& bufferView = gltfModel.bufferViews[accessor.bufferView];
-				const tinygltf::Buffer& buffer = gltfModel.buffers[bufferView.buffer];
-				newSkin->inverseBindMatrices.resize(accessor.count);
-				memcpy(newSkin->inverseBindMatrices.data(), &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(glm::mat4));
-			}
-
-			skins.push_back(newSkin);
-		}
-	}
-
-	void vkglTF::Model::loadImages(tinygltf::Model& gltfModel, VulkanDevice* device, VkQueue transferQueue)
-	{
-		for (tinygltf::Image& image : gltfModel.images) {
-			vkglTF::Texture texture;
-			texture.fromglTfImage(image, path, device, transferQueue);
-			texture.index = static_cast<uint32_t>(textures.size());
-			textures.push_back(texture);
-		}
-		// Create an empty texture to be used for empty material images
-		createEmptyTexture(transferQueue);
-	}
-
 	void vkglTF::Model::loadMaterials(tinygltf::Model& gltfModel)
 	{
 		for (tinygltf::Material& mat : gltfModel.materials) {
 			vkglTF::Material material(device);
-			if (mat.values.find("baseColorTexture") != mat.values.end()) {
-				material.baseColorTexture = getTexture(gltfModel.textures[mat.values["baseColorTexture"].TextureIndex()].source);
-			}
-			// Metallic roughness workflow
-			if (mat.values.find("metallicRoughnessTexture") != mat.values.end()) {
-				material.metallicRoughnessTexture = getTexture(gltfModel.textures[mat.values["metallicRoughnessTexture"].TextureIndex()].source);
-			}
-			if (mat.values.find("roughnessFactor") != mat.values.end()) {
-				material.roughnessFactor = static_cast<float>(mat.values["roughnessFactor"].Factor());
-			}
-			if (mat.values.find("metallicFactor") != mat.values.end()) {
-				material.metallicFactor = static_cast<float>(mat.values["metallicFactor"].Factor());
-			}
 			if (mat.values.find("baseColorFactor") != mat.values.end()) {
 				material.baseColorFactor = glm::make_vec4(mat.values["baseColorFactor"].ColorFactor().data());
-			}
-			if (mat.additionalValues.find("normalTexture") != mat.additionalValues.end()) {
-				material.normalTexture = getTexture(gltfModel.textures[mat.additionalValues["normalTexture"].TextureIndex()].source);
-			}
-			else {
-				material.normalTexture = &emptyTexture;
-			}
-			if (mat.additionalValues.find("emissiveTexture") != mat.additionalValues.end()) {
-				material.emissiveTexture = getTexture(gltfModel.textures[mat.additionalValues["emissiveTexture"].TextureIndex()].source);
-			}
-			if (mat.additionalValues.find("occlusionTexture") != mat.additionalValues.end()) {
-				material.occlusionTexture = getTexture(gltfModel.textures[mat.additionalValues["occlusionTexture"].TextureIndex()].source);
-			}
-			if (mat.additionalValues.find("alphaMode") != mat.additionalValues.end()) {
-				tinygltf::Parameter param = mat.additionalValues["alphaMode"];
-				if (param.string_value == "BLEND") {
-					material.alphaMode = Material::ALPHAMODE_BLEND;
-				}
-				if (param.string_value == "MASK") {
-					material.alphaMode = Material::ALPHAMODE_MASK;
-				}
-			}
-			if (mat.additionalValues.find("alphaCutoff") != mat.additionalValues.end()) {
-				material.alphaCutoff = static_cast<float>(mat.additionalValues["alphaCutoff"].Factor());
 			}
 
 			materials.push_back(material);
 		}
 		// Push a default material at the end of the list for meshes with no material assigned
 		materials.push_back(Material(device));
-	}
-
-	void vkglTF::Model::loadAnimations(tinygltf::Model& gltfModel)
-	{
-		for (tinygltf::Animation& anim : gltfModel.animations) {
-			vkglTF::Animation animation{};
-			animation.name = anim.name;
-			if (anim.name.empty()) {
-				animation.name = std::to_string(animations.size());
-			}
-
-			// Samplers
-			for (auto& samp : anim.samplers) {
-				vkglTF::AnimationSampler sampler{};
-
-				if (samp.interpolation == "LINEAR") {
-					sampler.interpolation = AnimationSampler::InterpolationType::LINEAR;
-				}
-				if (samp.interpolation == "STEP") {
-					sampler.interpolation = AnimationSampler::InterpolationType::STEP;
-				}
-				if (samp.interpolation == "CUBICSPLINE") {
-					sampler.interpolation = AnimationSampler::InterpolationType::CUBICSPLINE;
-				}
-
-				// Read sampler input time values
-				{
-					const tinygltf::Accessor& accessor = gltfModel.accessors[samp.input];
-					const tinygltf::BufferView& bufferView = gltfModel.bufferViews[accessor.bufferView];
-					const tinygltf::Buffer& buffer = gltfModel.buffers[bufferView.buffer];
-
-					assert(accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
-
-					float* buf = new float[accessor.count];
-					memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(float));
-					for (size_t index = 0; index < accessor.count; index++) {
-						sampler.inputs.push_back(buf[index]);
-					}
-					delete[] buf;
-					for (auto input : sampler.inputs) {
-						if (input < animation.start) {
-							animation.start = input;
-						};
-						if (input > animation.end) {
-							animation.end = input;
-						}
-					}
-				}
-
-				// Read sampler output T/R/S values 
-				{
-					const tinygltf::Accessor& accessor = gltfModel.accessors[samp.output];
-					const tinygltf::BufferView& bufferView = gltfModel.bufferViews[accessor.bufferView];
-					const tinygltf::Buffer& buffer = gltfModel.buffers[bufferView.buffer];
-
-					assert(accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
-
-					switch (accessor.type) {
-					case TINYGLTF_TYPE_VEC3: {
-						glm::vec3* buf = new glm::vec3[accessor.count];
-						memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(glm::vec3));
-						for (size_t index = 0; index < accessor.count; index++) {
-							sampler.outputsVec4.push_back(glm::vec4(buf[index], 0.0f));
-						}
-						delete[] buf;
-						break;
-					}
-					case TINYGLTF_TYPE_VEC4: {
-						glm::vec4* buf = new glm::vec4[accessor.count];
-						memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(glm::vec4));
-						for (size_t index = 0; index < accessor.count; index++) {
-							sampler.outputsVec4.push_back(buf[index]);
-						}
-						delete[] buf;
-						break;
-					}
-					default: {
-						std::cout << "unknown type" << std::endl;
-						break;
-					}
-					}
-				}
-
-				animation.samplers.push_back(sampler);
-			}
-
-			// Channels
-			for (auto& source : anim.channels) {
-				vkglTF::AnimationChannel channel{};
-
-				if (source.target_path == "rotation") {
-					channel.path = AnimationChannel::PathType::ROTATION;
-				}
-				if (source.target_path == "translation") {
-					channel.path = AnimationChannel::PathType::TRANSLATION;
-				}
-				if (source.target_path == "scale") {
-					channel.path = AnimationChannel::PathType::SCALE;
-				}
-				if (source.target_path == "weights") {
-					std::cout << "weights not yet supported, skipping channel" << std::endl;
-					continue;
-				}
-				channel.samplerIndex = source.sampler;
-				channel.node = nodeFromIndex(source.target_node);
-				if (!channel.node) {
-					continue;
-				}
-
-				animation.channels.push_back(channel);
-			}
-
-			animations.push_back(animation);
-		}
 	}
 
 	void vkglTF::Model::loadFromFile(const std::string& filename, VulkanDevice* device, VkQueue transferQueue, uint32_t fileLoadingFlags, float scale)
@@ -1183,25 +940,14 @@ namespace Voortman3D {
 		std::vector<Vertex> vertexBuffer;
 
 		if (fileLoaded) {
-			if (!(fileLoadingFlags & FileLoadingFlags::DontLoadImages)) {
-				loadImages(gltfModel, device, transferQueue);
-			}
 			loadMaterials(gltfModel);
 			const tinygltf::Scene& scene = gltfModel.scenes[gltfModel.defaultScene > -1 ? gltfModel.defaultScene : 0];
 			for (size_t i = 0; i < scene.nodes.size(); i++) {
 				const tinygltf::Node node = gltfModel.nodes[scene.nodes[i]];
 				loadNode(nullptr, node, scene.nodes[i], gltfModel, indexBuffer, vertexBuffer, scale);
 			}
-			if (gltfModel.animations.size() > 0) {
-				loadAnimations(gltfModel);
-			}
-			loadSkins(gltfModel);
 
 			for (auto node : linearNodes) {
-				// Assign skins
-				if (node->skinIndex > -1) {
-					node->skin = skins[node->skinIndex];
-				}
 				// Initial pose
 				if (node->mesh) {
 					node->update();
@@ -1403,26 +1149,13 @@ namespace Voortman3D {
 	{
 		if (node->mesh) {
 			for (Primitive* primitive : node->mesh->primitives) {
-				bool skip = false;
-				const vkglTF::Material& material = primitive->material;
-				if (renderFlags & RenderFlags::RenderOpaqueNodes) {
-					skip = (material.alphaMode != Material::ALPHAMODE_OPAQUE);
+				if (renderFlags & RenderFlags::BindImages) {
+					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, bindImageSet, 1, &primitive->material.descriptorSet, 0, nullptr);
 				}
-				if (renderFlags & RenderFlags::RenderAlphaMaskedNodes) {
-					skip = (material.alphaMode != Material::ALPHAMODE_MASK);
-				}
-				if (renderFlags & RenderFlags::RenderAlphaBlendedNodes) {
-					skip = (material.alphaMode != Material::ALPHAMODE_BLEND);
-				}
-				if (!skip) {
-					if (renderFlags & RenderFlags::BindImages) {
-						vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, bindImageSet, 1, &material.descriptorSet, 0, nullptr);
-					}
-					vkCmdDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, 0, 0);
-				}
+				vkCmdDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, 0, 0);
 			}
 		}
-		for (auto& child : node->children) {
+		for (const auto& child : node->children) {
 			drawNode(child, commandBuffer, renderFlags, pipelineLayout, bindImageSet);
 		}
 	}
@@ -1468,63 +1201,6 @@ namespace Voortman3D {
 		dimensions.size = dimensions.max - dimensions.min;
 		dimensions.center = (dimensions.min + dimensions.max) / 2.0f;
 		dimensions.radius = glm::distance(dimensions.min, dimensions.max) / 2.0f;
-	}
-
-	void vkglTF::Model::updateAnimation(uint32_t index, float time)
-	{
-		if (index > static_cast<uint32_t>(animations.size()) - 1) {
-			std::cout << "No animation with index " << index << std::endl;
-			return;
-		}
-		Animation& animation = animations[index];
-
-		bool updated = false;
-		for (auto& channel : animation.channels) {
-			vkglTF::AnimationSampler& sampler = animation.samplers[channel.samplerIndex];
-			if (sampler.inputs.size() > sampler.outputsVec4.size()) {
-				continue;
-			}
-
-			for (auto i = 0; i < sampler.inputs.size() - 1; i++) {
-				if ((time >= sampler.inputs[i]) && (time <= sampler.inputs[i + 1])) {
-					float u = std::max(0.0f, time - sampler.inputs[i]) / (sampler.inputs[i + 1] - sampler.inputs[i]);
-					if (u <= 1.0f) {
-						switch (channel.path) {
-						case vkglTF::AnimationChannel::PathType::TRANSLATION: {
-							glm::vec4 trans = glm::mix(sampler.outputsVec4[i], sampler.outputsVec4[i + 1], u);
-							channel.node->translation = glm::vec3(trans);
-							break;
-						}
-						case vkglTF::AnimationChannel::PathType::SCALE: {
-							glm::vec4 trans = glm::mix(sampler.outputsVec4[i], sampler.outputsVec4[i + 1], u);
-							channel.node->scale = glm::vec3(trans);
-							break;
-						}
-						case vkglTF::AnimationChannel::PathType::ROTATION: {
-							glm::quat q1;
-							q1.x = sampler.outputsVec4[i].x;
-							q1.y = sampler.outputsVec4[i].y;
-							q1.z = sampler.outputsVec4[i].z;
-							q1.w = sampler.outputsVec4[i].w;
-							glm::quat q2;
-							q2.x = sampler.outputsVec4[i + 1].x;
-							q2.y = sampler.outputsVec4[i + 1].y;
-							q2.z = sampler.outputsVec4[i + 1].z;
-							q2.w = sampler.outputsVec4[i + 1].w;
-							channel.node->rotation = glm::normalize(glm::slerp(q1, q2, u));
-							break;
-						}
-						}
-						updated = true;
-					}
-				}
-			}
-		}
-		if (updated) {
-			for (auto& node : nodes) {
-				node->update();
-			}
-		}
 	}
 
 	/*
