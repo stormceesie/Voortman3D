@@ -43,7 +43,7 @@ namespace Voortman3D {
     ULONG VariableHandle;
 
 
-    char szVar[] = { "MAIN.fSawHeight" };
+    char szVar[] = { "MachineObjectsArray.Saw.pZ1Axis^.fActualPosition" };
 
     long nErr = AdsSyncReadWriteReq(&Addr, ADSIGRP_SYM_HNDBYNAME, 0x0, sizeof(VariableHandle), &VariableHandle, sizeof(szVar), szVar);
 

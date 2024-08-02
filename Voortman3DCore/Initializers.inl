@@ -1,6 +1,6 @@
 // Code was derrived from Sasha Williams.
 
-// Inline initializers (standards)
+// constexprinitializers (standards)
 #pragma once
 #include "pch.h"
 
@@ -289,7 +289,7 @@ namespace Voortman3D {
 			return pipelineLayoutCreateInfo;
 		}
 
-		_NODISCARD inline VkDescriptorSetAllocateInfo descriptorSetAllocateInfo(
+		_NODISCARD constexpr VkDescriptorSetAllocateInfo descriptorSetAllocateInfo(
 			VkDescriptorPool descriptorPool,
 			const VkDescriptorSetLayout* pSetLayouts,
 			uint32_t descriptorSetCount) noexcept
@@ -302,7 +302,7 @@ namespace Voortman3D {
 			return descriptorSetAllocateInfo;
 		}
 
-		_NODISCARD inline VkDescriptorImageInfo descriptorImageInfo(
+		_NODISCARD constexpr VkDescriptorImageInfo descriptorImageInfo(
 			VkSampler sampler,
 			VkImageView imageView,
 			VkImageLayout imageLayout) noexcept
@@ -314,7 +314,7 @@ namespace Voortman3D {
 			return descriptorImageInfo;
 		}
 
-		_NODISCARD inline VkWriteDescriptorSet writeDescriptorSet(
+		_NODISCARD constexpr VkWriteDescriptorSet writeDescriptorSet(
 			VkDescriptorSet dstSet,
 			VkDescriptorType type,
 			uint32_t binding,
@@ -331,7 +331,7 @@ namespace Voortman3D {
 			return writeDescriptorSet;
 		}
 
-		_NODISCARD inline VkWriteDescriptorSet writeDescriptorSet(
+		_NODISCARD constexpr VkWriteDescriptorSet writeDescriptorSet(
 			VkDescriptorSet dstSet,
 			VkDescriptorType type,
 			uint32_t binding,
@@ -348,7 +348,7 @@ namespace Voortman3D {
 			return writeDescriptorSet;
 		}
 
-		_NODISCARD inline VkVertexInputBindingDescription vertexInputBindingDescription(
+		_NODISCARD constexpr VkVertexInputBindingDescription vertexInputBindingDescription(
 			uint32_t binding,
 			uint32_t stride,
 			VkVertexInputRate inputRate) noexcept

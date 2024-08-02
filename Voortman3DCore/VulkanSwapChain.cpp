@@ -173,7 +173,7 @@ namespace Voortman3D {
 		// Select a present mode for the swapchain
 
 		// Standardly FIFO_KHR as this should be fine for most applications
-		VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+		VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
 
 		// Determine the number of images
 		uint32_t desiredNumberOfSwapchainImages = surfCaps.minImageCount + 1;

@@ -18,6 +18,7 @@ namespace Voortman3D {
 		setupDPIAwareness();
 	}
 
+	// Will only be called in DEBUG modes for logging perposes
 	void Voortman3DCore::setupConsole(const std::wstring& title) {
 		AllocConsole();
 		AttachConsole(GetCurrentProcessId());
@@ -35,6 +36,7 @@ namespace Voortman3D {
 		SetConsoleTitle(title.c_str());
 	}
 
+	// Let the computer know that we will use DPI
 	void Voortman3DCore::setupDPIAwareness() {
 		typedef HRESULT* (__stdcall* SetProcessDpiAwarenessFunc)(PROCESS_DPI_AWARENESS);
 
@@ -53,19 +55,27 @@ namespace Voortman3D {
 		}
 	}
 
+	// Function to convert wide strings to normal ASCII strings as windows uses mostly LPWSTR (wide string 16bits) in stead of 8bits ASCII format
 	char* Voortman3DCore::TO_CHAR(const wchar_t* string) {
 		size_t len = wcslen(string) + 1;
-		char* c_string = new(std::nothrow) char[len];
+		
+		// Stack allocate the char
+#pragma warning(disable:6255) // Ignore stack overflow warning as the string wont be very long (as long as people use it for short strings (: )
+		char* c_string = (char*)_alloca(sizeof(char)*len);
+#pragma warning(default:6255)
 		size_t numCharsRead;
 		wcstombs_s(&numCharsRead, c_string, len, string, _TRUNCATE);
 		return c_string;
 	}
 
 	VkResult Voortman3DCore::createInstance() {
+		// App info is not required but can come in handy for info
 		VkApplicationInfo appInfo{};
 		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		appInfo.pApplicationName = TO_CHAR(name.c_str());
 		appInfo.pEngineName = TO_CHAR(name.c_str());
+
+		// Use the newest version (older CPU or GPU cannot support this version so maybe reduce the version
 		appInfo.apiVersion = VK_VERSION_1_3;
 
 		std::vector<const char*> instanceExtensions = { VK_KHR_SURFACE_EXTENSION_NAME };
@@ -102,6 +112,7 @@ namespace Voortman3D {
 		instanceCreateInfo.pNext = NULL;
 		instanceCreateInfo.pApplicationInfo = &appInfo;
 
+		// Only enable Debug utils in DEBUG mode as it affects the performance significantly
 #ifdef _DEBUG
 		if (std::find(supportedInstanceExtensions.begin(), supportedInstanceExtensions.end(), VK_EXT_DEBUG_UTILS_EXTENSION_NAME) != supportedInstanceExtensions.end()) {
 			instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -117,6 +128,7 @@ namespace Voortman3D {
 			instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
 		}
 
+		// Only validation in DEBUG modes as it affects the performance significantly
 #ifdef _DEBUG
 		const char* validationLayerName = "VK_LAYER_KHRONOS_validation";
 
@@ -145,15 +157,18 @@ namespace Voortman3D {
 
 		VkResult result = vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
 
+		// Only setup debug utils when in DEBUG modes as it affects the performance significantly
+#ifdef _DEBUG
 		if (std::find(supportedInstanceExtensions.begin(), supportedInstanceExtensions.end(), VK_EXT_DEBUG_UTILS_EXTENSION_NAME) != supportedInstanceExtensions.end()) {
 			DebugUtils::setup(instance);
 		}
+#endif
 
 		return result;
 	}
 
 	void Voortman3DCore::drawUI(const VkCommandBuffer commandbuffer) {
-		if (settings.overlay && uiOverlay.visible) {
+		if (settings.overlay && uiOverlay.visible) _LIKELY {
 			const VkViewport viewport = Initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
 			const VkRect2D scissor = Initializers::rect2D(width, height, 0, 0);
 			vkCmdSetViewport(commandbuffer, 0, 1, &viewport);
@@ -168,19 +183,19 @@ namespace Voortman3D {
 		
 		swapChain.cleanup();
 		
-		if (descriptorPool)
+		if (descriptorPool) _LIKELY
 			vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 
 		destroyCommandBuffers();
 
-		if (renderPass)
+		if (renderPass) _LIKELY
 			vkDestroyRenderPass(device, renderPass, nullptr);
 
-		for (auto& frameBuffer : frameBuffers) {
+		for (auto& frameBuffer : frameBuffers) _LIKELY {
 			vkDestroyFramebuffer(device, frameBuffer, nullptr);
 		}
 
-		for (auto& shaderModule : shaderModules) {
+		for (auto& shaderModule : shaderModules) _LIKELY {
 			vkDestroyShaderModule(device, shaderModule, nullptr);
 		}
 
@@ -195,21 +210,21 @@ namespace Voortman3D {
 		vkDestroySemaphore(device, semaphores.presentComplete, nullptr);
 		vkDestroySemaphore(device, semaphores.renderComplete, nullptr);
 
-		for (auto& fence : waitFences) {
+		for (auto& fence : waitFences) _LIKELY {
 			vkDestroyFence(device, fence, nullptr);
 		}
 
-		if (settings.overlay)
+		if (settings.overlay) _LIKELY
 			uiOverlay.freeResources();
 
-		if (vulkanDevice)
+		if (vulkanDevice) _LIKELY
 			delete vulkanDevice;
 
 #ifdef _DEBUG
 		Debug::freeDebugCallback(instance);
 #endif
 
-		if (instance)
+		if (instance) _LIKELY
 			vkDestroyInstance(instance, nullptr);
 	}
 
@@ -225,11 +240,14 @@ namespace Voortman3D {
 
 		err = createInstance();
 
-		if (err) {
+		if (err) _UNLIKELY {
 			std::cerr << "Could not create Vulkan instance : " << Tools::errorString(err) << std::endl;
 			return;
 		}
 
+		// Only setup debuggin in DEBUG mode as the debug functionality affects the performance
+		// Standardly does Vulkan almost none checks while running it will just run unexpectately or will just crash when setup wrong
+		// This will enhance the performance but can be very hard to find problems therefore did they make a DEBUG functionality that can be enabled and disabled.
 #ifdef _DEBUG
 		Debug::setupDebugging(instance);
 #endif
@@ -250,6 +268,7 @@ namespace Voortman3D {
 			return;
 		}
 
+		// Only in debug mode setup DEBUG and log the activities as it affects the performance
 #ifdef _DEBUG
 		std::cout << "Available Vulkan devices" << "\n";
 		for (uint32_t i = 0; i < gpuCount; i++) {
@@ -272,13 +291,15 @@ namespace Voortman3D {
 
 		GetEnabledFeatures();
 
+		// Don't throw as we will not catch exceptions
 		vulkanDevice = new(std::nothrow) VulkanDevice(physicalDevice);
+		assert(vulkanDevice != nullptr); // Check if allocation was succesfull
 
 		GetEnabledExtensions();
 
 		VkResult res = vulkanDevice->createLogicalDevice(enabledFeatures, enabledDeviceExtensions, deviceCreatepNextChain);
 
-		if (res != VK_SUCCESS) {
+		if (res != VK_SUCCESS) _UNLIKELY {
 			std::cerr << "Could not create Vulkan Device : \n" + Tools::errorString(res) << std::endl;
 			return;
 		}
@@ -325,7 +346,7 @@ namespace Voortman3D {
 
 	void Voortman3DCore::setupWindow(WNDPROC WndProc) {
 		// If window doesn't exist create a new unique ptr
-		if (!window)
+		if (!window) _LIKELY
 			window = std::make_unique<Window>(hInstance, WndProc, icon, name, title, height, width);
 	}
 

@@ -67,9 +67,9 @@ namespace Voortman3D {
 				// Read value from TwinCAT every 16 frames 
 				// maybe this should be time based instead of frame based because in immediate mode the frames can be come very high
 			if (!(frameCounter & 0b1111))
-				TCconnection->ReadValue<double>(randomVariableKey, &sawHeight);
+				TCconnection->ReadValue<float>(randomVariableKey, &sawHeight);
 			
-			uioverlay->inputDouble("Saw Height", &sawHeight);
+			uioverlay->inputFloat("Saw Height", &sawHeight);
 
 			ImGui::NewLine();
 

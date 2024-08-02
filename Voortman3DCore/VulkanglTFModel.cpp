@@ -30,26 +30,6 @@ namespace Voortman3D {
 	VkMemoryPropertyFlags vkglTF::memoryPropertyFlags = 0;
 
 	uint32_t vkglTF::descriptorBindingFlags = vkglTF::DescriptorBindingFlags::ImageBaseColor;
-	/*
-		We use a custom image loading function with tinyglTF, so we can do custom stuff loading ktx textures
-	*/
-	bool loadImageDataFunc(tinygltf::Image* image, const int imageIndex, std::string* error, std::string* warning, int req_width, int req_height, const unsigned char* bytes, int size, void* userData)
-	{
-		// KTX files will be handled by our own code
-		if (image->uri.find_last_of(".") != std::string::npos) {
-			if (image->uri.substr(image->uri.find_last_of(".") + 1) == "ktx") {
-				return true;
-			}
-		}
-
-		return tinygltf::LoadImageData(image, imageIndex, error, warning, req_width, req_height, bytes, size, userData);
-	}
-
-	bool loadImageDataFuncEmpty(tinygltf::Image* image, const int imageIndex, std::string* error, std::string* warning, int req_width, int req_height, const unsigned char* bytes, int size, void* userData)
-	{
-		// This function will be used for samples that don't require images to be loaded
-		return true;
-	}
 
 	/*
 		glTF material
@@ -126,29 +106,31 @@ namespace Voortman3D {
 	// This will result in the orientation matrix in the world where this node needs to be
 	glm::mat4 vkglTF::Node::getMatrix() {
 		glm::mat4 m = localMatrix();
-		if (parent)
+
+		// Use _LIKELY [[likely]] or _UNLIKELY [[unlikely]] as often as possible as it helps the compiler to optimize code
+		if (parent) _LIKELY // Most objects are going to have a parent
 			return m * parent->getMatrix();
 		else
 			return m;
 	}
 
 	void vkglTF::Node::update() {
-		if (mesh) {
+		if (mesh) _LIKELY {
 			glm::mat4x4 matrix = getMatrix();
 			memcpy(mesh->uniformBuffer.mapped, &matrix, sizeof(glm::mat4));
 		}
 
 		// Also update all children
-		for (auto& child : children) {
+		for (auto& child : children) _LIKELY {
 			child->update();
 		}
 	}
 
 	vkglTF::Node::~Node() {
-		if (mesh) {
+		if (mesh) _LIKELY {
 			delete mesh;
 		}
-		for (auto& child : children) {
+		for (auto& child : children) _LIKELY {
 			delete child;
 		}
 	}
@@ -167,13 +149,13 @@ namespace Voortman3D {
 
 	VkVertexInputAttributeDescription vkglTF::Vertex::inputAttributeDescription(uint32_t binding, uint32_t location, VertexComponent component) {
 		switch (component) {
-		case VertexComponent::Position:
+		case VertexComponent::Position: _LIKELY
 			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos) });
-		case VertexComponent::Normal:
+		case VertexComponent::Normal: _LIKELY
 			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal) });
-		case VertexComponent::Color:
+		case VertexComponent::Color: _LIKELY
 			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, color) });
-		default:
+		default: _UNLIKELY
 			return VkVertexInputAttributeDescription({});
 		}
 	}
@@ -181,7 +163,7 @@ namespace Voortman3D {
 	std::vector<VkVertexInputAttributeDescription> vkglTF::Vertex::inputAttributeDescriptions(uint32_t binding, const std::vector<VertexComponent> components) {
 		std::vector<VkVertexInputAttributeDescription> result;
 		uint32_t location = 0;
-		for (VertexComponent component : components) {
+		for (VertexComponent component : components) _LIKELY {
 			result.push_back(Vertex::inputAttributeDescription(binding, location, component));
 			location++;
 		}
@@ -209,15 +191,15 @@ namespace Voortman3D {
 		vkFreeMemory(device->logicalDevice, vertices.memory, nullptr);
 		vkDestroyBuffer(device->logicalDevice, indices.buffer, nullptr);
 		vkFreeMemory(device->logicalDevice, indices.memory, nullptr);
-		for (auto node : nodes) {
+		for (auto node : nodes) _LIKELY {
 			delete node;
 		}
 
-		if (descriptorSetLayoutUbo != VK_NULL_HANDLE) {
+		if (descriptorSetLayoutUbo != VK_NULL_HANDLE) _LIKELY {
 			vkDestroyDescriptorSetLayout(device->logicalDevice, descriptorSetLayoutUbo, nullptr);
 			descriptorSetLayoutUbo = VK_NULL_HANDLE;
 		}
-		if (descriptorSetLayoutImage != VK_NULL_HANDLE) {
+		if (descriptorSetLayoutImage != VK_NULL_HANDLE) _LIKELY {
 			vkDestroyDescriptorSetLayout(device->logicalDevice, descriptorSetLayoutImage, nullptr);
 			descriptorSetLayoutImage = VK_NULL_HANDLE;
 		}
@@ -237,14 +219,13 @@ namespace Voortman3D {
 
 		memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(T));
 
-		for (size_t index = 0; index < accessor.count; index++) {
+		for (size_t index = 0; index < accessor.count; index++) _LIKELY
 			indexBuffer.push_back(buf[index] + vertexStart);
-		}
 	}
 
 	void vkglTF::Model::loadNode(vkglTF::Node* parent, const tinygltf::Node& node, uint32_t nodeIndex, const tinygltf::Model& model, std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer, float globalscale)
 	{
-		vkglTF::Node* newNode = new(std::nothrow) Node{};
+		vkglTF::Node* newNode = new(std::nothrow) Node;
 		assert(newNode != nullptr); // Check if allocation was succesfull exceptions will not be catched so dont throw
 
 		newNode->index = nodeIndex;
@@ -348,19 +329,19 @@ namespace Voortman3D {
 					indexCount = static_cast<uint32_t>(accessor.count);
 
 					switch (accessor.componentType) {
-					case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT: {
+					case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT: _LIKELY { // Uint32_t will be the most likely type
 						CopyToIndexBuffer<uint32_t>(indexBuffer, bufferView, buffer, accessor, vertexStart);
 						break;
 					}
-					case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT: {
+					case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT: _UNLIKELY {
 						CopyToIndexBuffer<uint16_t>(indexBuffer, bufferView, buffer, accessor, vertexStart);
 						break;
 					}
-					case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE: {
+					case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE: _UNLIKELY {
 						CopyToIndexBuffer<uint8_t>(indexBuffer, bufferView, buffer, accessor, vertexStart);
 						break;
 					}
-					default:
+					default: _UNLIKELY // Very unlikely that it will be from another type
 						std::cerr << "Index component type " << accessor.componentType << " not supported!" << std::endl;
 						return;
 					}
@@ -401,12 +382,6 @@ namespace Voortman3D {
 	{
 		tinygltf::Model gltfModel;
 		tinygltf::TinyGLTF gltfContext;
-		if (fileLoadingFlags & FileLoadingFlags::DontLoadImages) {
-			gltfContext.SetImageLoader(loadImageDataFuncEmpty, nullptr);
-		}
-		else {
-			gltfContext.SetImageLoader(loadImageDataFunc, nullptr);
-		}
 
 		size_t pos = filename.find_last_of('/');
 		path = filename.substr(0, pos);
@@ -443,7 +418,6 @@ namespace Voortman3D {
 		// Pre-Calculations for requested features
 		if ((fileLoadingFlags & FileLoadingFlags::PreTransformVertices) || (fileLoadingFlags & FileLoadingFlags::PreMultiplyVertexColors) || (fileLoadingFlags & FileLoadingFlags::FlipY)) {
 			const bool preTransform = fileLoadingFlags & FileLoadingFlags::PreTransformVertices;
-			const bool preMultiplyColor = fileLoadingFlags & FileLoadingFlags::PreMultiplyVertexColors;
 			const bool flipY = fileLoadingFlags & FileLoadingFlags::FlipY;
 			for (Node* node : linearNodes) {
 				if (node->mesh) {
@@ -460,10 +434,6 @@ namespace Voortman3D {
 							if (flipY) {
 								vertex.pos.y *= -1.0f;
 								vertex.normal.y *= -1.0f;
-							}
-							// Pre-Multiply vertex colors with material base color
-							if (preMultiplyColor) {
-								vertex.color = primitive->material.baseColorFactor * vertex.color;
 							}
 						}
 					}

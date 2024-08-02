@@ -125,8 +125,8 @@ namespace Voortman3D {
 			glm::vec3 scale{ 1.0f };
 			glm::quat rotation{};
 
-			inline glm::mat4 localMatrix();
-			inline glm::mat4 getMatrix();
+			_NODISCARD inline glm::mat4 localMatrix();
+			_NODISCARD inline glm::mat4 getMatrix();
 			void update();
 			~Node();
 		};
