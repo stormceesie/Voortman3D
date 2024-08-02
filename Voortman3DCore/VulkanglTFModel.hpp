@@ -33,9 +33,6 @@ namespace Voortman3D {
 
 		struct Node;
 
-		/*
-			glTF texture loading class
-		*/
 		struct Texture {
 			VulkanDevice* device = nullptr;
 			VkImage image{};
@@ -50,9 +47,7 @@ namespace Voortman3D {
 			uint32_t index{};
 			void updateDescriptor();
 			void destroy();
-			void fromglTfImage(tinygltf::Image& gltfimage, std::string path, VulkanDevice* device, VkQueue copyQueue);
 		};
-
 		/*
 			glTF material class
 		*/
@@ -197,7 +192,6 @@ namespace Voortman3D {
 			std::vector<Node*> linearNodes; // just all the nodes listed in one big vector
 
 			std::vector<Material> materials;
-
 			struct Dimensions {
 				glm::vec3 min = glm::vec3(FLT_MAX);
 				glm::vec3 max = glm::vec3(-FLT_MAX);
