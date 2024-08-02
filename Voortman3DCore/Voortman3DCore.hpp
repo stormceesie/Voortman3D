@@ -162,6 +162,8 @@ namespace Voortman3D {
 
 		void* deviceCreatepNextChain = nullptr;
 
+		std::unique_ptr<Window> window;
+
 		virtual VkResult createInstance();
 
 		virtual void setupDepthStencil();
@@ -194,16 +196,14 @@ namespace Voortman3D {
 
 		void submitFrame();
 
+		_NODISCARD inline static char* TO_CHAR(const wchar_t* string);
+
 	private:
 		HINSTANCE hInstance;
-
-		std::unique_ptr<Window> window;
 
 		void setupDPIAwareness();
 
 		void setupConsole(const std::wstring& title);
-
-		_NODISCARD inline static char* TO_CHAR(const wchar_t* string);
 
 		void handleMouseMove(const int32_t x, const int32_t y);
 		void nextFrame();

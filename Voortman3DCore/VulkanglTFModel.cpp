@@ -187,10 +187,18 @@ namespace Voortman3D {
 	*/
 	vkglTF::Model::~Model()
 	{
-		vkDestroyBuffer(device->logicalDevice, vertices.buffer, nullptr);
-		vkFreeMemory(device->logicalDevice, vertices.memory, nullptr);
-		vkDestroyBuffer(device->logicalDevice, indices.buffer, nullptr);
-		vkFreeMemory(device->logicalDevice, indices.memory, nullptr);
+		if (vertices.buffer)
+			vkDestroyBuffer(device->logicalDevice, vertices.buffer, nullptr);
+
+		if (vertices.memory)
+			vkFreeMemory(device->logicalDevice, vertices.memory, nullptr);
+
+		if (indices.buffer)
+			vkDestroyBuffer(device->logicalDevice, indices.buffer, nullptr);
+
+		if (indices.memory)
+			vkFreeMemory(device->logicalDevice, indices.memory, nullptr);
+
 		for (auto node : nodes) _LIKELY {
 			delete node;
 		}
@@ -215,7 +223,7 @@ namespace Voortman3D {
 
 #pragma warning(disable : 6255) // Ignore stack overflow warning (this can happen but we are just going to ignore this because this is faster)
 		T* buf = (T*)_alloca(sizeof(T) * accessor.count); // Use alloca because it is very much faster than new or malloc as it is stack allocation. the memory will be destroyed at the end of the function
-#pragma warning(default:6255)
+#pragma warning(default : 6255)
 
 		memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(T));
 

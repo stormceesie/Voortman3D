@@ -3,6 +3,7 @@
 #include "resource.h"
 #include "VulkanglTFModel.hpp"
 #include "TwinCATConnection.hpp"
+#include "commdlg.h"
 
 namespace Voortman3D {
 	class Voortman3D final : public Voortman3DCore {
@@ -51,7 +52,7 @@ namespace Voortman3D {
 
 		void renderNode(vkglTF::Node* node, VkCommandBuffer commandBuffer);
 
-		void loadAssets();
+		void loadAssets(const std::string& FilePath);
 		void prepareUniformBuffers();
 		void setupDescriptors();
 		void preparePipelines();
@@ -62,6 +63,7 @@ namespace Voortman3D {
 		void prepareConditionalRendering();
 		void TwinCATPreperation();
 		void draw();
+		void OpenFileDialog();
 
 		void OnUpdateUIOverlay(UIOverlay* uioverlay) override;
 		void prepare()			                         override;

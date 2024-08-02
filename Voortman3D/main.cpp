@@ -1,5 +1,7 @@
 #include "main.hpp"
 
+#define LOAD_MODEL = 0xDF;
+
 namespace Voortman3D {
 	Voortman3D::Voortman3D(HINSTANCE hInstance) : Voortman3DCore(hInstance) {
 		this->title = L"Voortman3D";
@@ -64,6 +66,10 @@ namespace Voortman3D {
 				buildCommandBuffers();
 			}
 
+			if (uioverlay->button("Load Model")) {
+				OpenFileDialog();
+			}
+
 			// Read 10 times per second
 			if (std::chrono::high_resolution_clock::now() - lastPLCRead >= std::chrono::milliseconds(100))
 				TCconnection->ReadValue<float>(randomVariableKey, &sawHeight);
@@ -82,6 +88,27 @@ namespace Voortman3D {
 				}
 			}
 			ImGui::EndChild();
+		}
+	}
+
+	void Voortman3D::OpenFileDialog() {
+		OPENFILENAME ofn;
+		LPWSTR szFile = (LPWSTR)_alloca(260*sizeof(char));
+
+		ZeroMemory(&ofn, sizeof(ofn));
+		ofn.lStructSize = sizeof(ofn);
+		ofn.hwndOwner = window->window();
+		ofn.lpstrFile = szFile;
+		ofn.nMaxFile = sizeof(szFile);
+		ofn.lpstrFilter = L"All Files\0*.*\0Text Files\0*.TXT\0";
+		ofn.nFilterIndex = 1;
+		ofn.lpstrFileTitle = NULL;
+		ofn.nMaxFileTitle = 0;
+		ofn.lpstrInitialDir = NULL;
+		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+		if (GetOpenFileName(&ofn)) {
+
 		}
 	}
 
@@ -222,8 +249,8 @@ namespace Voortman3D {
 		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipelines.wireframe));
 	}
 
-	void Voortman3D::loadAssets() {
-		scene.loadFromFile("C:/Users/f.kegler/Documents/untitled.gltf", vulkanDevice, queue);
+	void Voortman3D::loadAssets(const std::string& FilePath) {
+		scene.loadFromFile(FilePath, vulkanDevice, queue);
 	}
 
 	void Voortman3D::buildCommandBuffers() {
@@ -344,7 +371,7 @@ namespace Voortman3D {
 
 	void Voortman3D::prepare() {
 		Voortman3DCore::prepare();
-		loadAssets();
+		loadAssets("C:/Users/f.kegler/Documents/untitled.gltf");
 		prepareConditionalRendering();
 		prepareUniformBuffers();
 		setupDescriptors();
