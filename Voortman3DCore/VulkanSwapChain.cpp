@@ -135,7 +135,7 @@ namespace Voortman3D {
 	* @param height Pointer to the height of the swapchain (may be adjusted to fit the requirements of the swapchain)
 	* @param vsync (Optional) Can be used to force vsync-ed rendering (by using VK_PRESENT_MODE_FIFO_KHR as presentation mode)
 	*/
-	void VulkanSwapChain::create(uint32_t* width, uint32_t* height, bool vsync, bool fullscreen)
+	void VulkanSwapChain::create(uint32_t* width, uint32_t* height, bool fullscreen)
 	{
 		// Store the current swap chain handle so we can use it later on to ease up recreation
 		VkSwapchainKHR oldSwapchain = swapChain;
@@ -172,27 +172,8 @@ namespace Voortman3D {
 
 		// Select a present mode for the swapchain
 
-		// The VK_PRESENT_MODE_FIFO_KHR mode must always be present as per spec
-		// This mode waits for the vertical blank ("v-sync")
+		// Standardly FIFO_KHR as this should be fine for most applications
 		VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
-
-		// If v-sync is not requested, try to find a mailbox mode
-		// It's the lowest latency non-tearing present mode available
-		if (!vsync)
-		{
-			for (size_t i = 0; i < presentModeCount; i++)
-			{
-				if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
-				{
-					swapchainPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
-					break;
-				}
-				if (presentModes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR)
-				{
-					swapchainPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
-				}
-			}
-		}
 
 		// Determine the number of images
 		uint32_t desiredNumberOfSwapchainImages = surfCaps.minImageCount + 1;

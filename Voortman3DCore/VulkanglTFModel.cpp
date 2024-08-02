@@ -597,6 +597,21 @@ namespace Voortman3D {
 		vkDestroyDescriptorPool(device->logicalDevice, descriptorPool, nullptr);
 	}
 
+
+	template <typename T>
+	void vkglTF::Model::CopyToIndexBuffer(std::vector<uint32_t>& indexBuffer,
+		const tinygltf::BufferView& bufferView,
+		const tinygltf::Buffer& buffer,
+		const tinygltf::Accessor& accessor,
+		uint32_t vertexStart) {
+		T* buf = (T*)_alloca(sizeof(T) * accessor.count); // Use alloca because it is very much faster than new or malloc as it is stack allocation. the memory will be destroyed at the end of the function
+		memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(T));
+
+		for (size_t index = 0; index < accessor.count; index++) {
+			indexBuffer.push_back(buf[index] + vertexStart);
+		}
+	}
+
 	void vkglTF::Model::loadNode(vkglTF::Node* parent, const tinygltf::Node& node, uint32_t nodeIndex, const tinygltf::Model& model, std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer, float globalscale)
 	{
 		vkglTF::Node* newNode = new Node{};
@@ -655,12 +670,8 @@ namespace Voortman3D {
 				{
 					const float* bufferPos = nullptr;
 					const float* bufferNormals = nullptr;
-					const float* bufferTexCoords = nullptr;
 					const float* bufferColors = nullptr;
-					const float* bufferTangents = nullptr;
 					uint32_t numColorComponents;
-					const uint16_t* bufferJoints = nullptr;
-					const float* bufferWeights = nullptr;
 
 					// Position attribute is required
 					assert(primitive.attributes.find("POSITION") != primitive.attributes.end());
@@ -715,30 +726,15 @@ namespace Voortman3D {
 
 					switch (accessor.componentType) {
 					case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT: {
-						uint32_t* buf = new(std::nothrow) uint32_t[accessor.count];
-						memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(uint32_t));
-						for (size_t index = 0; index < accessor.count; index++) {
-							indexBuffer.push_back(buf[index] + vertexStart);
-						}
-						delete[] buf;
+						CopyToIndexBuffer<uint32_t>(indexBuffer, bufferView, buffer, accessor, vertexStart);
 						break;
 					}
 					case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT: {
-						uint16_t* buf = new(std::nothrow) uint16_t[accessor.count];
-						memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(uint16_t));
-						for (size_t index = 0; index < accessor.count; index++) {
-							indexBuffer.push_back(buf[index] + vertexStart);
-						}
-						delete[] buf;
+						CopyToIndexBuffer<uint16_t>(indexBuffer, bufferView, buffer, accessor, vertexStart);
 						break;
 					}
 					case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE: {
-						uint8_t* buf = new(std::nothrow) uint8_t[accessor.count];
-						memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(uint8_t));
-						for (size_t index = 0; index < accessor.count; index++) {
-							indexBuffer.push_back(buf[index] + vertexStart);
-						}
-						delete[] buf;
+						CopyToIndexBuffer<uint8_t>(indexBuffer, bufferView, buffer, accessor, vertexStart);
 						break;
 					}
 					default:

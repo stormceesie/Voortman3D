@@ -6,12 +6,7 @@
 * This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
 */
 
-/*
- * Note that this isn't a complete glTF loader and not all features of the glTF 2.0 spec are supported
- * For details on how glTF 2.0 works, see the official spec at https://github.com/KhronosGroup/glTF/tree/master/specification/2.0
- *
- * If you are looking for a complete glTF implementation, check out https://github.com/SaschaWillems/Vulkan-glTF-PBR/
- */
+// GLTF loader based of Sacha Willems examples - Florent Kegler
 
 #pragma once
 #include "pch.h"
@@ -150,7 +145,7 @@ namespace Voortman3D {
 		struct Vertex {
 			glm::vec3 pos;
 			glm::vec3 normal;
-			glm::vec4 color;
+			glm::vec4 color; // Vec4 because of alpha channel
 
 			static VkVertexInputBindingDescription vertexInputBindingDescription;
 			static std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;
@@ -199,7 +194,7 @@ namespace Voortman3D {
 			} indices{};
 
 			std::vector<Node*> nodes;
-			std::vector<Node*> linearNodes;
+			std::vector<Node*> linearNodes; // just all the nodes listed in one big vector
 
 			std::vector<Material> materials;
 
@@ -223,6 +218,13 @@ namespace Voortman3D {
 			void draw(VkCommandBuffer commandBuffer, uint32_t renderFlags = 0, VkPipelineLayout pipelineLayout = VK_NULL_HANDLE, uint32_t bindImageSet = 1);
 			void getNodeDimensions(Node* node, glm::vec3& min, glm::vec3& max);
 			void getSceneDimensions();
+
+			template <typename T>
+			void CopyToIndexBuffer(std::vector<uint32_t>& indexBuffer,
+				const tinygltf::BufferView& bufferView,
+				const tinygltf::Buffer& buffer,
+				const tinygltf::Accessor& accessor,
+				uint32_t vertexStart);
 
 			_NODISCARD Node* findNode(Node* parent, uint32_t index);
 			_NODISCARD Node* nodeFromIndex(uint32_t index);

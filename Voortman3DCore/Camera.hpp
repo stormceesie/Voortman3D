@@ -8,6 +8,8 @@
 * This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
 */
 
+// This class is based of Sacha Willems - Florent Kegler
+
 #include "pch.h"
 
 namespace Voortman3D {
@@ -101,9 +103,5 @@ namespace Voortman3D {
 		}
 
 		void update(float deltaTime);
-
-		// Update camera passing separate axis data (gamepad)
-		// Returns true if view or position has been changed
-		bool updatePad(glm::vec2 axisLeft, glm::vec2 axisRight, float deltaTime);
 	};
 }

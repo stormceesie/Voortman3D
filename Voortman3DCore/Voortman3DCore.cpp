@@ -342,7 +342,7 @@ namespace Voortman3D {
 	}
 
 	void Voortman3DCore::setupSwapChain() {
-		swapChain.create(&width, &height, true, false);
+		swapChain.create(&width, &height, false);
 	}
 
 	void Voortman3DCore::createCommandBuffers() {

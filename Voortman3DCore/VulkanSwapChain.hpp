@@ -37,7 +37,7 @@ namespace Voortman3D {
 		void initSurface(void* platformHandle, void* platformWindow);
 
 		void connect(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device);
-		void create(uint32_t* width, uint32_t* height, bool vsync = false, bool fullscreen = false);
+		void create(uint32_t* width, uint32_t* height, bool fullscreen = false);
 		VkResult acquireNextImage(VkSemaphore presentCompleteSemaphore, uint32_t* imageIndex);
 		VkResult queuePresent(VkQueue queue, uint32_t imageIndex, VkSemaphore waitSemaphore = VK_NULL_HANDLE);
 		void cleanup();
