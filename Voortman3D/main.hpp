@@ -20,7 +20,10 @@ namespace Voortman3D {
 
 		const uint32_t randomVariableKey = 10;
 
+		// Value that will be read from TwinCAT
 		float sawHeight{};
+
+		std::chrono::time_point<std::chrono::high_resolution_clock> lastPLCRead;
 
 		VkClearColorValue backgroundColor = { 1.f, 1.f, 1.f, 1.f };
 

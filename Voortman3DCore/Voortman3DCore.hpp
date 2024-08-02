@@ -184,6 +184,8 @@ namespace Voortman3D {
 
 		virtual void OnUpdateUIOverlay(UIOverlay* uioverlay) {};
 
+		VkPipelineShaderStageCreateInfo loadShader(VkShaderStageFlagBits stage, void* hResourceData, size_t resourceSize);
+
 		VkPipelineShaderStageCreateInfo loadShader(const std::string& fileName, VkShaderStageFlagBits stage);
 
 		void drawUI(const VkCommandBuffer commandbuffer);

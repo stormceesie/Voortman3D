@@ -659,15 +659,34 @@ namespace Voortman3D {
 		updateOverlay();
 	}
 
+	VkPipelineShaderStageCreateInfo Voortman3DCore::loadShader(VkShaderStageFlagBits stage, void* hResData, size_t ResourceSize) {
+		VkShaderModule shaderModule;
+		VkShaderModuleCreateInfo moduleCreateInfo{};
+		moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		moduleCreateInfo.codeSize = ResourceSize;
+		moduleCreateInfo.pCode = (uint32_t*)hResData;
+
+		VK_CHECK_RESULT(vkCreateShaderModule(device, &moduleCreateInfo, nullptr, &shaderModule));
+
+		VkPipelineShaderStageCreateInfo shaderStage{};
+		shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		shaderStage.stage = stage;
+		shaderStage.module = shaderModule;
+		shaderStage.pName = "main";
+
+		assert(shaderStage.module != VK_NULL_HANDLE);
+		shaderModules.push_back(shaderStage.module);
+		return shaderStage;
+	}
+
 	VkPipelineShaderStageCreateInfo Voortman3DCore::loadShader(const std::string& fileName, VkShaderStageFlagBits stage)
 	{
 		VkPipelineShaderStageCreateInfo shaderStage = {};
 		shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shaderStage.stage = stage;
-
 		shaderStage.module = Tools::loadShader(fileName.c_str(), device);
-
 		shaderStage.pName = "main";
+
 		assert(shaderStage.module != VK_NULL_HANDLE);
 		shaderModules.push_back(shaderStage.module);
 		return shaderStage;

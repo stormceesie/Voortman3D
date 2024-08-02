@@ -64,9 +64,8 @@ namespace Voortman3D {
 				buildCommandBuffers();
 			}
 
-				// Read value from TwinCAT every 16 frames 
-				// maybe this should be time based instead of frame based because in immediate mode the frames can be come very high
-			if (!(frameCounter & 0b1111))
+			// Read 10 times per second
+			if (std::chrono::high_resolution_clock::now() - lastPLCRead >= std::chrono::milliseconds(100))
 				TCconnection->ReadValue<float>(randomVariableKey, &sawHeight);
 			
 			uioverlay->inputFloat("Saw Height", &sawHeight);
@@ -192,12 +191,25 @@ namespace Voortman3D {
 		pipelineCI.pDynamicState = &dynamicStateCI;
 		pipelineCI.pVertexInputState = vkglTF::Vertex::getPipelineVertexInputState({ vkglTF::VertexComponent::Position, vkglTF::VertexComponent::Normal, vkglTF::VertexComponent::Color });
 
-		VkPipelineShaderStageCreateInfo VertexShader = loadShader("Shaders/model.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		VkPipelineShaderStageCreateInfo FragmentShader = loadShader("Shaders/model.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		// Load shader from resource
+		HRSRC FragmentResource = FindResource(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDR_MODEL_FRAGMENT), L"Shader");
+		HRSRC VertexResource = FindResource(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDR_MODEL_VERTEX), L"Shader");
+
+		assert(FragmentResource != NULL);
+		assert(VertexResource != NULL);
+
+		HGLOBAL fragmentData = LoadResource(GetModuleHandle(nullptr), FragmentResource);
+		HGLOBAL vertexData = LoadResource(GetModuleHandle(nullptr), VertexResource);
+
+		assert(fragmentData != NULL);
+		assert(fragmentData != NULL);
+
+		size_t fragmentDataSize = SizeofResource(GetModuleHandle(nullptr), FragmentResource);
+		size_t VertexDataSize = SizeofResource(GetModuleHandle(nullptr), VertexResource);
 
 		const std::array<VkPipelineShaderStageCreateInfo, 2> shaderStagesRender = {
-			VertexShader,
-			FragmentShader
+			loadShader(VK_SHADER_STAGE_FRAGMENT_BIT, LockResource(fragmentData), fragmentDataSize),
+			loadShader(VK_SHADER_STAGE_VERTEX_BIT, LockResource(vertexData), VertexDataSize)
 		};
 
 		pipelineCI.stageCount = static_cast<uint32_t>(shaderStagesRender.size());
@@ -268,12 +280,12 @@ namespace Voortman3D {
 			The conditional rendering functions are part of an extension so they have to be loaded manually
 		*/
 		vkCmdBeginConditionalRenderingEXT = (PFN_vkCmdBeginConditionalRenderingEXT)vkGetDeviceProcAddr(device, "vkCmdBeginConditionalRenderingEXT");
-		if (!vkCmdBeginConditionalRenderingEXT) {
+		if (!vkCmdBeginConditionalRenderingEXT) _UNLIKELY {
 			std::cerr << "Could not get a valid function pointer for vkCmdBeginConditionalRenderingEXT\n";
 		}
 
 		vkCmdEndConditionalRenderingEXT = (PFN_vkCmdEndConditionalRenderingEXT)vkGetDeviceProcAddr(device, "vkCmdEndConditionalRenderingEXT");
-		if (!vkCmdEndConditionalRenderingEXT) {
+		if (!vkCmdEndConditionalRenderingEXT) _UNLIKELY {
 			std::cerr << "Could not get a valid function pointer for vkCmdEndConditionalRenderingEXT\n";
 		}
 

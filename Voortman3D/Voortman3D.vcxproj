@@ -173,7 +173,14 @@
     <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\..\..\Users\f.kegler\Downloads\VoortmanLogo (1).ico" />
     <Image Include="..\..\..\Users\Florent Kegler\Downloads\voortmanlogo (1).ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Voortman3DCore\Shaders\uioverlay.frag.spv" />
+    <None Include="..\Voortman3DCore\Shaders\uioverlay.vert.spv" />
+    <None Include="Shaders\model.frag.spv" />
+    <None Include="Shaders\model.vert.spv" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
