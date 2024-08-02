@@ -17,7 +17,6 @@ Voortman3D is a proof of concept for machine simulation software designed to pro
 - **Vulkan SDK**: Ensure the Vulkan SDK is installed on your system.
 - **KTX Library**: Required for texture management.
 - **TwinCAT ADS SDK**: For communication with PLCs.
-- **CMake**: For building the project.
 
 - ## Contact
 For any questions or feedback, please open an issue on GitHub or contact kegler.florent@gmail.com.
