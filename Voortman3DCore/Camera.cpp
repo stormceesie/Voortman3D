@@ -4,7 +4,7 @@
 
 namespace Voortman3D {
 
-	void Camera::updateViewMatrix()
+	void Camera::updateViewMatrix() noexcept
 	{
 		glm::mat4 rotM = glm::mat4(1.0f);
 		glm::mat4 transM;
@@ -26,7 +26,7 @@ namespace Voortman3D {
 		updated = true;
 	}
 
-	void Camera::setPerspective(float fov, float aspect, float znear, float zfar)
+	void Camera::setPerspective(const float fov, const float aspect, const float znear, const float zfar) noexcept
 	{
 		this->fov = fov;
 		this->znear = znear;
@@ -37,7 +37,7 @@ namespace Voortman3D {
 		}
 	}
 
-	void Camera::update(float deltaTime)
+	void Camera::update(const float deltaTime) noexcept
 	{
 		updated = false;
 		updateViewMatrix();

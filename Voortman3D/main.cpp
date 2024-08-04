@@ -75,8 +75,8 @@ namespace Voortman3D {
 			}
 
 			// Read 10 times per second
-			if (std::chrono::high_resolution_clock::now() - lastPLCRead >= std::chrono::milliseconds(100))
-				TCconnection->ReadValue<float>(randomVariableKey, &sawHeight);
+//			if (std::chrono::high_resolution_clock::now() - lastPLCRead >= std::chrono::milliseconds(100))
+//				TCconnection->ReadValue<float>(randomVariableKey, &sawHeight);
 			
 			uioverlay->inputFloat("Saw Height", &sawHeight);
 
@@ -116,10 +116,10 @@ namespace Voortman3D {
 		}
 	}
 
-	void Voortman3D::renderNode(vkglTF::Node* node, VkCommandBuffer commandBuffer) {
+	void Voortman3D::renderNode(const vkglTF::Node* node, const VkCommandBuffer commandBuffer) {
 		if (node->mesh) {
 			for (vkglTF::Primitive* primitive : node->mesh->primitives) {
-				const std::vector<VkDescriptorSet> descriptorsets = {
+				const std::array<VkDescriptorSet, 2> descriptorsets = {
 					descriptorSet,
 					node->mesh->uniformBuffer.descriptorSet
 				};
@@ -148,7 +148,7 @@ namespace Voortman3D {
 			}
 
 		};
-		for (auto child : node->children) {
+		for (const auto child : node->children) {
 			renderNode(child, commandBuffer);
 		}
 	}
@@ -164,55 +164,66 @@ namespace Voortman3D {
 	}
 
 	void Voortman3D::setupDescriptors() {
-		// Pool
-		std::vector<VkDescriptorPoolSize> poolSizes = {
-			Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1),
-		};
-		VkDescriptorPoolCreateInfo descriptorPoolCI = Initializers::descriptorPoolCreateInfo(poolSizes, 1);
-		VK_CHECK_RESULT(vkCreateDescriptorPool(device, &descriptorPoolCI, nullptr, &descriptorPool));
 
-		// Layouts
-		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
-			Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0),
+		// Compile time initialization
+		static constexpr std::array<VkDescriptorPoolSize, 1> poolSizes = {
+			Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1)
 		};
-		VkDescriptorSetLayoutCreateInfo descriptorLayoutCI{};
-		descriptorLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		descriptorLayoutCI.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
-		descriptorLayoutCI.pBindings = setLayoutBindings.data();
+
+		constexpr VkDescriptorPoolCreateInfo descriptorInfo = Initializers::descriptorPoolCreateInfo(poolSizes, 1);
+
+		VK_CHECK_RESULT(vkCreateDescriptorPool(device, &descriptorInfo, nullptr, &descriptorPool));
+
+		static constexpr std::array<VkDescriptorSetLayoutBinding, 1> setLayoutBindings = {
+			Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0)
+		};
+
+		constexpr VkDescriptorSetLayoutCreateInfo descriptorLayoutCI = Initializers::descriptorLayoutCI(setLayoutBindings);
+
 		VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &descriptorLayoutCI, nullptr, &descriptorSetLayout));
 
-		// Sets
-		VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = Initializers::descriptorSetAllocateInfo(descriptorPool, &descriptorSetLayout, 1);
+		// Sets cannot be set at compile time
+		const VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = Initializers::descriptorSetAllocateInfo(descriptorPool, &descriptorSetLayout, 1);
+
 		VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &descriptorSetAllocateInfo, &descriptorSet));
-		std::vector<VkWriteDescriptorSet> writeDescriptorSets = {
+
+		const std::array<VkWriteDescriptorSet, 1> writeDescriptorSets = {
 			Initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &uniformBuffer.descriptor)
 		};
+
 		vkUpdateDescriptorSets(device, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
 	}
 
 	void Voortman3D::preparePipelines() {
 		// Layout
-		std::array<VkDescriptorSetLayout, 2> setLayouts = {
+		const std::array<VkDescriptorSetLayout, 2> setLayouts = {
 			descriptorSetLayout, vkglTF::descriptorSetLayoutUbo
 		};
+
 		VkPipelineLayoutCreateInfo pipelineLayoutCI = Initializers::pipelineLayoutCreateInfo(setLayouts.data(), 2);
-		VkPushConstantRange pushConstantRange = Initializers::pushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::vec4), 0);
+		const VkPushConstantRange pushConstantRange = Initializers::pushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(glm::vec4), 0);
+
 		pipelineLayoutCI.pushConstantRangeCount = 1;
 		pipelineLayoutCI.pPushConstantRanges = &pushConstantRange;
 		VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pipelineLayoutCI, nullptr, &pipelineLayout));
 
-		// Pipeline
-		VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCI = Initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
+		// Pipeline most of the info can be set at compile time
+		constexpr VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCI = Initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 		VkPipelineRasterizationStateCreateInfo rasterizationStateCI = Initializers::pipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, 0);
-		VkPipelineColorBlendAttachmentState blendAttachmentState = Initializers::pipelineColorBlendAttachmentState(0xf, VK_FALSE);
-		VkPipelineColorBlendStateCreateInfo colorBlendStateCI = Initializers::pipelineColorBlendStateCreateInfo(1, &blendAttachmentState);
-		VkPipelineDepthStencilStateCreateInfo depthStencilStateCI = Initializers::pipelineDepthStencilStateCreateInfo(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL);
-		VkPipelineViewportStateCreateInfo viewportStateCI = Initializers::pipelineViewportStateCreateInfo(1, 1, 0);
-		VkPipelineMultisampleStateCreateInfo multisampleStateCI = Initializers::pipelineMultisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT, 0);
-		const std::vector<VkDynamicState> dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-		VkPipelineDynamicStateCreateInfo dynamicStateCI = Initializers::pipelineDynamicStateCreateInfo(dynamicStateEnables, 0);
+
+		static constexpr VkPipelineColorBlendAttachmentState blendAttachmentState = Initializers::pipelineColorBlendAttachmentState(0xf, VK_FALSE);
+
+		constexpr VkPipelineColorBlendStateCreateInfo colorBlendStateCI = Initializers::pipelineColorBlendStateCreateInfo(1, &blendAttachmentState);
+
+		constexpr VkPipelineDepthStencilStateCreateInfo depthStencilStateCI = Initializers::pipelineDepthStencilStateCreateInfo(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL);
+		constexpr VkPipelineViewportStateCreateInfo viewportStateCI = Initializers::pipelineViewportStateCreateInfo(1, 1, 0);
+		constexpr VkPipelineMultisampleStateCreateInfo multisampleStateCI = Initializers::pipelineMultisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT, 0);
+
+		static constexpr std::array<VkDynamicState, 2> dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+		constexpr VkPipelineDynamicStateCreateInfo dynamicStateCI = Initializers::pipelineDynamicStateCreateInfo(dynamicStateEnables, 0);
 
 		VkGraphicsPipelineCreateInfo pipelineCI = Initializers::pipelineCreateInfo(pipelineLayout, renderPass, 0);
+
 		pipelineCI.pInputAssemblyState = &inputAssemblyStateCI;
 		pipelineCI.pRasterizationState = &rasterizationStateCI;
 		pipelineCI.pColorBlendState = &colorBlendStateCI;
@@ -223,20 +234,14 @@ namespace Voortman3D {
 		pipelineCI.pVertexInputState = vkglTF::Vertex::getPipelineVertexInputState({ vkglTF::VertexComponent::Position, vkglTF::VertexComponent::Normal, vkglTF::VertexComponent::Color });
 
 		// Load shader from resource
-		HRSRC FragmentResource = FindResource(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDR_MODEL_FRAGMENT), L"Shader");
-		HRSRC VertexResource = FindResource(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDR_MODEL_VERTEX), L"Shader");
+		const HRSRC FragmentResource = FindResource(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDR_MODEL_FRAGMENT), L"Shader");
+		const HRSRC VertexResource = FindResource(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDR_MODEL_VERTEX), L"Shader");
 
-		assert(FragmentResource != NULL);
-		assert(VertexResource != NULL);
+		const HGLOBAL fragmentData = LoadResource(GetModuleHandle(nullptr), FragmentResource);
+		const HGLOBAL vertexData = LoadResource(GetModuleHandle(nullptr), VertexResource);
 
-		HGLOBAL fragmentData = LoadResource(GetModuleHandle(nullptr), FragmentResource);
-		HGLOBAL vertexData = LoadResource(GetModuleHandle(nullptr), VertexResource);
-
-		assert(fragmentData != NULL);
-		assert(fragmentData != NULL);
-
-		size_t fragmentDataSize = SizeofResource(GetModuleHandle(nullptr), FragmentResource);
-		size_t VertexDataSize = SizeofResource(GetModuleHandle(nullptr), VertexResource);
+		const size_t fragmentDataSize = SizeofResource(GetModuleHandle(nullptr), FragmentResource);
+		const size_t VertexDataSize = SizeofResource(GetModuleHandle(nullptr), VertexResource);
 
 		const std::array<VkPipelineShaderStageCreateInfo, 2> shaderStagesRender = {
 			loadShader(VK_SHADER_STAGE_FRAGMENT_BIT, LockResource(fragmentData), fragmentDataSize),
@@ -258,7 +263,7 @@ namespace Voortman3D {
 	}
 
 	void Voortman3D::buildCommandBuffers() {
-		VkCommandBufferBeginInfo cmdBufInfo = Initializers::commandBufferBeginInfo();
+		constexpr VkCommandBufferBeginInfo cmdBufInfo = Initializers::commandBufferBeginInfo();
 
 		VkClearValue clearValues[2];
 		clearValues[0].color = backgroundColor;
@@ -281,8 +286,11 @@ namespace Voortman3D {
 			vkCmdBeginRenderPass(drawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 			VkViewport viewport = Initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
+
 			vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
+
 			VkRect2D scissor = Initializers::rect2D(width, height, 0, 0);
+
 			vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);
 
 			vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
@@ -290,10 +298,10 @@ namespace Voortman3D {
 			// Choose wether we bind the wireframe pipeline or the solid pipeline
 			vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, wireframe ? pipelines.wireframe : pipelines.solid);
 
-			const VkDeviceSize offsets[1] = { 0 };
+			constexpr VkDeviceSize offsets[1] = { 0 };
 			vkCmdBindVertexBuffers(drawCmdBuffers[i], 0, 1, &scene.vertices.buffer, offsets);
 			vkCmdBindIndexBuffer(drawCmdBuffers[i], scene.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-			for (auto node : scene.nodes) {
+			for (const auto node : scene.nodes) {
 				renderNode(node, drawCmdBuffers[i]);
 			}
 

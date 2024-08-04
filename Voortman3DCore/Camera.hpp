@@ -19,7 +19,7 @@ namespace Voortman3D {
 		float fov;
 		float znear, zfar;
 
-		void updateViewMatrix();
+		void updateViewMatrix() noexcept;
 	public:
 		glm::vec3 rotation = glm::vec3();
 		glm::vec3 position = glm::vec3();
@@ -52,41 +52,41 @@ namespace Voortman3D {
 
 		_NODISCARD inline const float getFarClip() const noexcept { return zfar; }
 
-		void setPerspective(float fov, float aspect, float znear, float zfar);
+		void setPerspective(const float fov, const float aspect, const float znear, const float zfar) noexcept;
 
-		inline void updateAspectRatio(float aspect) noexcept
+		inline void updateAspectRatio(const float aspect) noexcept
 		{
 			matrices.perspective = glm::perspective(glm::radians(fov), aspect, znear, zfar);
-			if (flipY) {
+			if (flipY) _LIKELY {
 				matrices.perspective[1][1] *= -1.0f;
 			}
 		}
 
-		void setPosition(glm::vec3 position)
+		void setPosition(glm::vec3 position) noexcept
 		{
 			this->position = position;
 			updateViewMatrix();
 		}
 
-		void setRotation(glm::vec3 rotation)
+		void setRotation(glm::vec3 rotation) noexcept
 		{
 			this->rotation = rotation;
 			updateViewMatrix();
 		}
 
-		void rotate(glm::vec3 delta)
+		void rotate(glm::vec3 delta) noexcept
 		{
 			this->rotation += delta;
 			updateViewMatrix();
 		}
 
-		void setTranslation(glm::vec3 translation)
+		void setTranslation(glm::vec3 translation) noexcept
 		{
 			this->position = translation;
 			updateViewMatrix();
 		};
 
-		void translate(glm::vec3 delta)
+		void translate(glm::vec3 delta) noexcept
 		{
 			this->position += delta;
 			updateViewMatrix();
@@ -102,6 +102,6 @@ namespace Voortman3D {
 			this->movementSpeed = movementSpeed;
 		}
 
-		void update(float deltaTime);
+		void update(float deltaTime) noexcept;
 	};
 }

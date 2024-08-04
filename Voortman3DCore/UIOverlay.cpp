@@ -146,41 +146,41 @@ namespace Voortman3D {
 		stagingBuffer.destroy();
 
 		// Font texture Sampler
-		VkSamplerCreateInfo samplerInfo = Initializers::samplerCreateInfo();
-		samplerInfo.magFilter = VK_FILTER_LINEAR;
-		samplerInfo.minFilter = VK_FILTER_LINEAR;
-		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-		samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+		constexpr VkSamplerCreateInfo samplerInfo = Initializers::FontTextureInitializer();
+
 		VK_CHECK_RESULT(vkCreateSampler(device->logicalDevice, &samplerInfo, nullptr, &sampler));
 
-		// Descriptor pool
-		std::vector<VkDescriptorPoolSize> poolSizes = {
+		// Descriptor pool info at compile time
+		static constexpr std::array<VkDescriptorPoolSize, 1> poolSizes = {
 			Initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1)
 		};
-		VkDescriptorPoolCreateInfo descriptorPoolInfo = Initializers::descriptorPoolCreateInfo(poolSizes, 2);
+
+		static constexpr VkDescriptorPoolCreateInfo descriptorPoolInfo = Initializers::descriptorPoolCreateInfo(poolSizes, 2);
+
 		VK_CHECK_RESULT(vkCreateDescriptorPool(device->logicalDevice, &descriptorPoolInfo, nullptr, &descriptorPool));
 
 		// Descriptor set layout
-		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
-			Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0),
+		static constexpr std::array<VkDescriptorSetLayoutBinding, 1> setLayoutBindings = {
+			Initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0)
 		};
-		VkDescriptorSetLayoutCreateInfo descriptorLayout = Initializers::descriptorSetLayoutCreateInfo(setLayoutBindings);
+
+		constexpr VkDescriptorSetLayoutCreateInfo descriptorLayout = Initializers::descriptorSetLayoutCreateInfo(setLayoutBindings);
 		VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device->logicalDevice, &descriptorLayout, nullptr, &descriptorSetLayout));
 
 		// Descriptor set
-		VkDescriptorSetAllocateInfo allocInfo = Initializers::descriptorSetAllocateInfo(descriptorPool, &descriptorSetLayout, 1);
+		const VkDescriptorSetAllocateInfo allocInfo = Initializers::descriptorSetAllocateInfo(descriptorPool, &descriptorSetLayout, 1);
+
 		VK_CHECK_RESULT(vkAllocateDescriptorSets(device->logicalDevice, &allocInfo, &descriptorSet));
 		VkDescriptorImageInfo fontDescriptor = Initializers::descriptorImageInfo(
 			sampler,
 			fontView,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 		);
-		std::vector<VkWriteDescriptorSet> writeDescriptorSets = {
+
+		const std::array<VkWriteDescriptorSet, 1> writeDescriptorSets = {
 			Initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, &fontDescriptor)
 		};
+
 		vkUpdateDescriptorSets(device->logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
 	}
 
@@ -189,48 +189,42 @@ namespace Voortman3D {
 	{
 		// Pipeline layout
 		// Push constants for UI rendering parameters
-		VkPushConstantRange pushConstantRange = Initializers::pushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(PushConstBlock), 0);
+		constexpr VkPushConstantRange pushConstantRange = Initializers::pushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(PushConstBlock), 0);
+
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = Initializers::pipelineLayoutCreateInfo(&descriptorSetLayout, 1);
+
 		pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 		pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
 		VK_CHECK_RESULT(vkCreatePipelineLayout(device->logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout));
 
 		// Setup graphics pipeline for UI rendering
-		VkPipelineInputAssemblyStateCreateInfo inputAssemblyState =
+		constexpr VkPipelineInputAssemblyStateCreateInfo inputAssemblyState =
 			Initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 
-		VkPipelineRasterizationStateCreateInfo rasterizationState =
+		constexpr VkPipelineRasterizationStateCreateInfo rasterizationState =
 			Initializers::pipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 
 		// Enable blending
-		VkPipelineColorBlendAttachmentState blendAttachmentState{};
-		blendAttachmentState.blendEnable = VK_TRUE;
-		blendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		blendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-		blendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-		blendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
-		blendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-		blendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-		blendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
+		static constexpr VkPipelineColorBlendAttachmentState blendAttachmentState = Initializers::blendingInitializer();
 
-		VkPipelineColorBlendStateCreateInfo colorBlendState =
+		constexpr VkPipelineColorBlendStateCreateInfo colorBlendState =
 			Initializers::pipelineColorBlendStateCreateInfo(1, &blendAttachmentState);
 
-		VkPipelineDepthStencilStateCreateInfo depthStencilState =
+		constexpr VkPipelineDepthStencilStateCreateInfo depthStencilState =
 			Initializers::pipelineDepthStencilStateCreateInfo(VK_FALSE, VK_FALSE, VK_COMPARE_OP_ALWAYS);
 
-		VkPipelineViewportStateCreateInfo viewportState =
+		constexpr VkPipelineViewportStateCreateInfo viewportState =
 			Initializers::pipelineViewportStateCreateInfo(1, 1, 0);
 
-		VkPipelineMultisampleStateCreateInfo multisampleState =
+		const VkPipelineMultisampleStateCreateInfo multisampleState =
 			Initializers::pipelineMultisampleStateCreateInfo(rasterizationSamples);
 
-		std::vector<VkDynamicState> dynamicStateEnables = {
+		static constexpr std::array<VkDynamicState, 2> dynamicStateEnables = {
 			VK_DYNAMIC_STATE_VIEWPORT,
 			VK_DYNAMIC_STATE_SCISSOR
 		};
-		VkPipelineDynamicStateCreateInfo dynamicState =
-			Initializers::pipelineDynamicStateCreateInfo(dynamicStateEnables);
+
+		constexpr VkPipelineDynamicStateCreateInfo dynamicState = Initializers::pipelineDynamicStateCreateInfo(dynamicStateEnables);
 
 		VkGraphicsPipelineCreateInfo pipelineCreateInfo = Initializers::pipelineCreateInfo(pipelineLayout, renderPass);
 
@@ -246,14 +240,16 @@ namespace Voortman3D {
 		pipelineCreateInfo.subpass = subpass;
 
 		// Vertex bindings an attributes based on ImGui vertex definition
-		std::vector<VkVertexInputBindingDescription> vertexInputBindings = {
+		constexpr std::array<VkVertexInputBindingDescription, 1> vertexInputBindings = {
 			Initializers::vertexInputBindingDescription(0, sizeof(ImDrawVert), VK_VERTEX_INPUT_RATE_VERTEX),
 		};
-		std::vector<VkVertexInputAttributeDescription> vertexInputAttributes = {
+
+		constexpr std::array<VkVertexInputAttributeDescription, 3> vertexInputAttributes = {
 			Initializers::vertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(ImDrawVert, pos)),	// Location 0: Position
 			Initializers::vertexInputAttributeDescription(0, 1, VK_FORMAT_R32G32_SFLOAT, offsetof(ImDrawVert, uv)),	// Location 1: UV
 			Initializers::vertexInputAttributeDescription(0, 2, VK_FORMAT_R8G8B8A8_UNORM, offsetof(ImDrawVert, col)),	// Location 0: Color
 		};
+
 		VkPipelineVertexInputStateCreateInfo vertexInputState = Initializers::pipelineVertexInputStateCreateInfo();
 		vertexInputState.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexInputBindings.size());
 		vertexInputState.pVertexBindingDescriptions = vertexInputBindings.data();
@@ -278,7 +274,7 @@ namespace Voortman3D {
 		VkDeviceSize indexBufferSize = imDrawData->TotalIdxCount * sizeof(ImDrawIdx);
 
 		// Update buffers only if vertex or index count has been changed compared to current buffer size
-		if ((vertexBufferSize == 0) || (indexBufferSize == 0)) {
+		if ((vertexBufferSize == 0) || (indexBufferSize == 0)) _LIKELY {
 			return false;
 		}
 

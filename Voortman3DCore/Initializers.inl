@@ -25,9 +25,9 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkCommandBufferAllocateInfo commandBufferAllocateInfo(
-			VkCommandPool commandPool,
-			VkCommandBufferLevel level,
-			uint32_t bufferCount) noexcept
+			const VkCommandPool commandPool,
+			const VkCommandBufferLevel level,
+			const uint32_t bufferCount) noexcept
 		{
 			VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
 			commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -135,7 +135,7 @@ namespace Voortman3D {
 			return semaphoreCreateInfo;
 		}
 
-		_NODISCARD constexpr VkFenceCreateInfo fenceCreateInfo(VkFenceCreateFlags flags = 0) noexcept
+		_NODISCARD constexpr VkFenceCreateInfo fenceCreateInfo(const VkFenceCreateFlags flags = 0) noexcept
 		{
 			VkFenceCreateInfo fenceCreateInfo{};
 			fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -158,10 +158,10 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkViewport viewport(
-			float width,
-			float height,
-			float minDepth,
-			float maxDepth) noexcept
+			const float width,
+			const float height,
+			const float minDepth,
+			const float maxDepth) noexcept
 		{
 			VkViewport viewport{};
 			viewport.width = width;
@@ -171,11 +171,27 @@ namespace Voortman3D {
 			return viewport;
 		}
 
+		_NODISCARD constexpr VkPipelineColorBlendAttachmentState blendingInitializer() {
+
+				// Enable blending
+			VkPipelineColorBlendAttachmentState blendAttachmentState{};
+			blendAttachmentState.blendEnable = VK_TRUE;
+			blendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+			blendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+			blendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+			blendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
+			blendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+			blendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+			blendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
+
+			return blendAttachmentState;
+		}
+
 		_NODISCARD constexpr VkRect2D rect2D(
-			int32_t width,
-			int32_t height,
-			int32_t offsetX,
-			int32_t offsetY) noexcept
+			const int32_t width,
+			const int32_t height,
+			const int32_t offsetX,
+			const int32_t offsetY) noexcept
 		{
 			VkRect2D rect2D{};
 			rect2D.extent.width = width;
@@ -193,8 +209,8 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkBufferCreateInfo bufferCreateInfo(
-			VkBufferUsageFlags usage,
-			VkDeviceSize size) noexcept
+			const VkBufferUsageFlags usage,
+			const VkDeviceSize size) noexcept
 		{
 			VkBufferCreateInfo bufCreateInfo{};
 			bufCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -204,9 +220,9 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkDescriptorPoolCreateInfo descriptorPoolCreateInfo(
-			uint32_t poolSizeCount,
-			VkDescriptorPoolSize* pPoolSizes,
-			uint32_t maxSets) noexcept
+			const uint32_t poolSizeCount,
+			const VkDescriptorPoolSize* pPoolSizes,
+			const uint32_t maxSets) noexcept
 		{
 			VkDescriptorPoolCreateInfo descriptorPoolInfo{};
 			descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -216,9 +232,24 @@ namespace Voortman3D {
 			return descriptorPoolInfo;
 		}
 
+		// Handle any size of array (compile time constexpr)
+		template <std::size_t N>
+		_NODISCARD constexpr VkDescriptorSetLayoutCreateInfo descriptorLayoutCI(
+			const std::array<VkDescriptorSetLayoutBinding, N>& setLayoutBindings) {
+
+			VkDescriptorSetLayoutCreateInfo descriptorLayoutCI{};
+			descriptorLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+			descriptorLayoutCI.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
+			descriptorLayoutCI.pBindings = setLayoutBindings.data();
+
+			return descriptorLayoutCI;
+		}
+
+		// Handle any size of array (compile time constexpr)
+		template <std::size_t N>
 		_NODISCARD constexpr VkDescriptorPoolCreateInfo descriptorPoolCreateInfo(
-			const std::vector<VkDescriptorPoolSize>& poolSizes,
-			uint32_t maxSets) noexcept
+			const std::array<VkDescriptorPoolSize, N>& poolSizes,
+			const uint32_t maxSets) noexcept
 		{
 			VkDescriptorPoolCreateInfo descriptorPoolInfo{};
 			descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -229,8 +260,8 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkDescriptorPoolSize descriptorPoolSize(
-			VkDescriptorType type,
-			uint32_t descriptorCount) noexcept
+			const VkDescriptorType type,
+			const uint32_t descriptorCount) noexcept
 		{
 			VkDescriptorPoolSize descriptorPoolSize{};
 			descriptorPoolSize.type = type;
@@ -238,11 +269,11 @@ namespace Voortman3D {
 			return descriptorPoolSize;
 		}
 
-		_NODISCARD constexpr VkDescriptorSetLayoutBinding descriptorSetLayoutBinding(
-			VkDescriptorType type,
-			VkShaderStageFlags stageFlags,
-			uint32_t binding,
-			uint32_t descriptorCount = 1) noexcept
+		_NODISCARD static constexpr VkDescriptorSetLayoutBinding descriptorSetLayoutBinding(
+			const VkDescriptorType type,
+			const VkShaderStageFlags stageFlags,
+			const uint32_t binding,
+			const uint32_t descriptorCount = 1) noexcept
 		{
 			VkDescriptorSetLayoutBinding setLayoutBinding{};
 			setLayoutBinding.descriptorType = type;
@@ -254,7 +285,7 @@ namespace Voortman3D {
 
 		_NODISCARD constexpr VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo(
 			const VkDescriptorSetLayoutBinding* pBindings,
-			uint32_t bindingCount) noexcept
+			const uint32_t bindingCount) noexcept
 		{
 			VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{};
 			descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -263,8 +294,10 @@ namespace Voortman3D {
 			return descriptorSetLayoutCreateInfo;
 		}
 
+		// Handle any size of array (compile time constexpr)
+		template <std::size_t N>
 		_NODISCARD constexpr VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo(
-			const std::vector<VkDescriptorSetLayoutBinding>& bindings) noexcept
+			const std::array<VkDescriptorSetLayoutBinding, N>& bindings) noexcept
 		{
 			VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{};
 			descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -275,7 +308,7 @@ namespace Voortman3D {
 
 		_NODISCARD constexpr VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo(
 			const VkDescriptorSetLayout* pSetLayouts,
-			uint32_t setLayoutCount = 1) noexcept
+			const uint32_t setLayoutCount = 1) noexcept
 		{
 			VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
 			pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -285,7 +318,7 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo(
-			uint32_t setLayoutCount = 1) noexcept
+			const uint32_t setLayoutCount = 1) noexcept
 		{
 			VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
 			pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -294,9 +327,9 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkDescriptorSetAllocateInfo descriptorSetAllocateInfo(
-			VkDescriptorPool descriptorPool,
+			const VkDescriptorPool descriptorPool,
 			const VkDescriptorSetLayout* pSetLayouts,
-			uint32_t descriptorSetCount) noexcept
+			const uint32_t descriptorSetCount) noexcept
 		{
 			VkDescriptorSetAllocateInfo descriptorSetAllocateInfo{};
 			descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -307,9 +340,9 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkDescriptorImageInfo descriptorImageInfo(
-			VkSampler sampler,
-			VkImageView imageView,
-			VkImageLayout imageLayout) noexcept
+			const VkSampler sampler,
+			const VkImageView imageView,
+			const VkImageLayout imageLayout) noexcept
 		{
 			VkDescriptorImageInfo descriptorImageInfo{};
 			descriptorImageInfo.sampler = sampler;
@@ -319,11 +352,11 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkWriteDescriptorSet writeDescriptorSet(
-			VkDescriptorSet dstSet,
-			VkDescriptorType type,
-			uint32_t binding,
-			VkDescriptorBufferInfo* bufferInfo,
-			uint32_t descriptorCount = 1) noexcept
+			const VkDescriptorSet dstSet,
+			const VkDescriptorType type,
+			const uint32_t binding,
+			const VkDescriptorBufferInfo* bufferInfo,
+			const uint32_t descriptorCount = 1) noexcept
 		{
 			VkWriteDescriptorSet writeDescriptorSet{};
 			writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -336,11 +369,11 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkWriteDescriptorSet writeDescriptorSet(
-			VkDescriptorSet dstSet,
-			VkDescriptorType type,
-			uint32_t binding,
-			VkDescriptorImageInfo* imageInfo,
-			uint32_t descriptorCount = 1) noexcept
+			const VkDescriptorSet dstSet,
+			const VkDescriptorType type,
+			const uint32_t binding,
+			const VkDescriptorImageInfo* imageInfo,
+			const uint32_t descriptorCount = 1) noexcept
 		{
 			VkWriteDescriptorSet writeDescriptorSet{};
 			writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -353,9 +386,9 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkVertexInputBindingDescription vertexInputBindingDescription(
-			uint32_t binding,
-			uint32_t stride,
-			VkVertexInputRate inputRate) noexcept
+			const uint32_t binding,
+			const uint32_t stride,
+			const VkVertexInputRate inputRate) noexcept
 		{
 			VkVertexInputBindingDescription vInputBindDescription{};
 			vInputBindDescription.binding = binding;
@@ -365,10 +398,10 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkVertexInputAttributeDescription vertexInputAttributeDescription(
-			uint32_t binding,
-			uint32_t location,
-			VkFormat format,
-			uint32_t offset) noexcept
+			const uint32_t binding,
+			const uint32_t location,
+			const VkFormat format,
+			const uint32_t offset) noexcept
 		{
 			VkVertexInputAttributeDescription vInputAttribDescription{};
 			vInputAttribDescription.location = location;
@@ -385,9 +418,11 @@ namespace Voortman3D {
 			return pipelineVertexInputStateCreateInfo;
 		}
 
+		// Handle any size of array (compile time constexpr)
+		template <std::size_t N1, std::size_t N2>
 		_NODISCARD constexpr VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo(
-			const std::vector<VkVertexInputBindingDescription>& vertexBindingDescriptions,
-			const std::vector<VkVertexInputAttributeDescription>& vertexAttributeDescriptions
+			const std::array<VkVertexInputBindingDescription, N1>& vertexBindingDescriptions,
+			const std::array<VkVertexInputAttributeDescription, N2>& vertexAttributeDescriptions
 		) noexcept
 		{
 			VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo{};
@@ -400,9 +435,9 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkPipelineInputAssemblyStateCreateInfo pipelineInputAssemblyStateCreateInfo(
-			VkPrimitiveTopology topology,
-			VkPipelineInputAssemblyStateCreateFlags flags,
-			VkBool32 primitiveRestartEnable)
+			const VkPrimitiveTopology topology,
+			const VkPipelineInputAssemblyStateCreateFlags flags,
+			const VkBool32 primitiveRestartEnable)
 		{
 			VkPipelineInputAssemblyStateCreateInfo pipelineInputAssemblyStateCreateInfo{};
 			pipelineInputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -413,10 +448,10 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkPipelineRasterizationStateCreateInfo pipelineRasterizationStateCreateInfo(
-			VkPolygonMode polygonMode,
-			VkCullModeFlags cullMode,
-			VkFrontFace frontFace,
-			VkPipelineRasterizationStateCreateFlags flags = 0) noexcept
+			const VkPolygonMode polygonMode,
+			const VkCullModeFlags cullMode,
+			const VkFrontFace frontFace,
+			const VkPipelineRasterizationStateCreateFlags flags = 0) noexcept
 		{
 			VkPipelineRasterizationStateCreateInfo pipelineRasterizationStateCreateInfo{};
 			pipelineRasterizationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -430,8 +465,8 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState(
-			VkColorComponentFlags colorWriteMask,
-			VkBool32 blendEnable) noexcept
+			const VkColorComponentFlags colorWriteMask,
+			const VkBool32 blendEnable) noexcept
 		{
 			VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState{};
 			pipelineColorBlendAttachmentState.colorWriteMask = colorWriteMask;
@@ -440,7 +475,7 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo(
-			uint32_t attachmentCount,
+			const uint32_t attachmentCount,
 			const VkPipelineColorBlendAttachmentState* pAttachments) noexcept
 		{
 			VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo{};
@@ -451,9 +486,9 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkPipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo(
-			VkBool32 depthTestEnable,
-			VkBool32 depthWriteEnable,
-			VkCompareOp depthCompareOp) noexcept
+			const VkBool32 depthTestEnable,
+			const VkBool32 depthWriteEnable,
+			const VkCompareOp depthCompareOp) noexcept
 		{
 			VkPipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo{};
 			pipelineDepthStencilStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -465,9 +500,9 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo(
-			uint32_t viewportCount,
-			uint32_t scissorCount,
-			VkPipelineViewportStateCreateFlags flags = 0) noexcept
+			const uint32_t viewportCount,
+			const uint32_t scissorCount,
+			const VkPipelineViewportStateCreateFlags flags = 0) noexcept
 		{
 			VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo{};
 			pipelineViewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -478,8 +513,8 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo(
-			VkSampleCountFlagBits rasterizationSamples,
-			VkPipelineMultisampleStateCreateFlags flags = 0) noexcept
+			const VkSampleCountFlagBits rasterizationSamples,
+			const VkPipelineMultisampleStateCreateFlags flags = 0) noexcept
 		{
 			VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo{};
 			pipelineMultisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -490,8 +525,8 @@ namespace Voortman3D {
 
 		_NODISCARD constexpr VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo(
 			const VkDynamicState* pDynamicStates,
-			uint32_t dynamicStateCount,
-			VkPipelineDynamicStateCreateFlags flags = 0) noexcept
+			const uint32_t dynamicStateCount,
+			const VkPipelineDynamicStateCreateFlags flags = 0) noexcept
 		{
 			VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo{};
 			pipelineDynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -501,9 +536,11 @@ namespace Voortman3D {
 			return pipelineDynamicStateCreateInfo;
 		}
 
+		// Handle any size of array (compile time constexpr)
+		template <std::size_t N>
 		_NODISCARD constexpr VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo(
-			const std::vector<VkDynamicState>& pDynamicStates,
-			VkPipelineDynamicStateCreateFlags flags = 0) noexcept
+			const std::array<VkDynamicState, N>& pDynamicStates,
+			const VkPipelineDynamicStateCreateFlags flags = 0) noexcept
 		{
 			VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo{};
 			pipelineDynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -513,7 +550,7 @@ namespace Voortman3D {
 			return pipelineDynamicStateCreateInfo;
 		}
 
-		_NODISCARD constexpr VkPipelineTessellationStateCreateInfo pipelineTessellationStateCreateInfo(uint32_t patchControlPoints) noexcept
+		_NODISCARD constexpr VkPipelineTessellationStateCreateInfo pipelineTessellationStateCreateInfo(const uint32_t patchControlPoints) noexcept
 		{
 			VkPipelineTessellationStateCreateInfo pipelineTessellationStateCreateInfo{};
 			pipelineTessellationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
@@ -522,9 +559,9 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkGraphicsPipelineCreateInfo pipelineCreateInfo(
-			VkPipelineLayout layout,
-			VkRenderPass renderPass,
-			VkPipelineCreateFlags flags = 0) noexcept
+			const VkPipelineLayout layout,
+			const VkRenderPass renderPass,
+			const VkPipelineCreateFlags flags = 0) noexcept
 		{
 			VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
 			pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -546,8 +583,8 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkComputePipelineCreateInfo computePipelineCreateInfo(
-			VkPipelineLayout layout,
-			VkPipelineCreateFlags flags = 0) noexcept
+			const VkPipelineLayout layout,
+			const VkPipelineCreateFlags flags = 0) noexcept
 		{
 			VkComputePipelineCreateInfo computePipelineCreateInfo{};
 			computePipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -557,9 +594,9 @@ namespace Voortman3D {
 		}
 
 		_NODISCARD constexpr VkPushConstantRange pushConstantRange(
-			VkShaderStageFlags stageFlags,
-			uint32_t size,
-			uint32_t offset) noexcept
+			const VkShaderStageFlags stageFlags,
+			const uint32_t size,
+			const uint32_t offset) noexcept
 		{
 			VkPushConstantRange pushConstantRange{};
 			pushConstantRange.stageFlags = stageFlags;
@@ -576,7 +613,10 @@ namespace Voortman3D {
 		}
 
 		/** @brief Initialize a map entry for a shader specialization constant */
-		_NODISCARD constexpr VkSpecializationMapEntry specializationMapEntry(uint32_t constantID, uint32_t offset, size_t size) noexcept
+		_NODISCARD constexpr VkSpecializationMapEntry specializationMapEntry(
+			const uint32_t constantID,
+			const uint32_t offset,
+			const size_t size) noexcept
 		{
 			VkSpecializationMapEntry specializationMapEntry{};
 			specializationMapEntry.constantID = constantID;
@@ -586,7 +626,11 @@ namespace Voortman3D {
 		}
 
 		/** @brief Initialize a specialization constant info structure to pass to a shader stage */
-		_NODISCARD constexpr VkSpecializationInfo specializationInfo(uint32_t mapEntryCount, const VkSpecializationMapEntry* mapEntries, size_t dataSize, const void* data) noexcept
+		_NODISCARD constexpr VkSpecializationInfo specializationInfo(
+			const uint32_t mapEntryCount,
+			const VkSpecializationMapEntry* mapEntries,
+			const size_t dataSize,
+			const void* data) noexcept
 		{
 			VkSpecializationInfo specializationInfo{};
 			specializationInfo.mapEntryCount = mapEntryCount;
@@ -597,7 +641,11 @@ namespace Voortman3D {
 		}
 
 		/** @brief Initialize a specialization constant info structure to pass to a shader stage */
-		_NODISCARD constexpr VkSpecializationInfo specializationInfo(const std::vector<VkSpecializationMapEntry>& mapEntries, size_t dataSize, const void* data) noexcept
+		template <std::size_t N>
+		_NODISCARD constexpr VkSpecializationInfo specializationInfo(
+			const std::array<VkSpecializationMapEntry, N>& mapEntries,
+			const size_t dataSize,
+			const void* data) noexcept
 		{
 			VkSpecializationInfo specializationInfo{};
 			specializationInfo.mapEntryCount = static_cast<uint32_t>(mapEntries.size());
@@ -648,6 +696,20 @@ namespace Voortman3D {
 			VkWriteDescriptorSetAccelerationStructureKHR writeDescriptorSetAccelerationStructureKHR{};
 			writeDescriptorSetAccelerationStructureKHR.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
 			return writeDescriptorSetAccelerationStructureKHR;
+		}
+
+		_NODISCARD constexpr VkSamplerCreateInfo FontTextureInitializer() {
+			// Font texture Sampler
+			VkSamplerCreateInfo samplerInfo = Initializers::samplerCreateInfo();
+			samplerInfo.magFilter = VK_FILTER_LINEAR;
+			samplerInfo.minFilter = VK_FILTER_LINEAR;
+			samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+			samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+
+			return samplerInfo;
 		}
 	}
 }

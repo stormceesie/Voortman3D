@@ -248,7 +248,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {		
 																								  \
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {								  \
 	for (int32_t i = 0; i < __argc; i++) { Voortman3D::Voortman3D::args.push_back(__argv[i]); };  \
-	voortman3D = new(std::nothrow) Voortman3D::Voortman3D(hInstance);											  \
+	voortman3D = new(std::nothrow) Voortman3D::Voortman3D(hInstance);						      \
 	voortman3D->initVulkan();																	  \
 	voortman3D->setupWindow(WndProc);															  \
 	voortman3D->prepare();																		  \

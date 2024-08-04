@@ -6,6 +6,9 @@
 #include "commdlg.h"
 
 namespace Voortman3D {
+
+	constexpr uint32_t randomVariableKey = 10;
+
 	class Voortman3D final : public Voortman3DCore {
 	public:
 		Voortman3D(HINSTANCE hInstance);
@@ -19,28 +22,26 @@ namespace Voortman3D {
 
 		bool wireframe = false;
 
-		const uint32_t randomVariableKey = 10;
-
 		// Value that will be read from TwinCAT
 		float sawHeight{};
 
 		std::chrono::time_point<std::chrono::high_resolution_clock> lastPLCRead;
 
-		VkClearColorValue backgroundColor = { 1.f, 1.f, 1.f, 1.f };
+		const VkClearColorValue backgroundColor = { 1.f, 1.f, 1.f, 1.f };
 
 		struct UniformData {
 			glm::mat4 projection;
 			glm::mat4 view;
 			glm::mat4 model;
-		} uniformData;
-		Buffer uniformBuffer;
+		} uniformData{};
+		Buffer uniformBuffer{};
 
 		std::vector<int32_t> conditionalVisibility{};
-		Buffer conditionalBuffer;
+		Buffer conditionalBuffer{};
 
 		VkPipelineLayout pipelineLayout{ VK_NULL_HANDLE };
 
-		TwinCATConnection* TCconnection;
+		TwinCATConnection* TCconnection{};
 
 		struct Pipelines {
 			VkPipeline solid{ VK_NULL_HANDLE };
@@ -50,7 +51,7 @@ namespace Voortman3D {
 		VkDescriptorSetLayout descriptorSetLayout{ VK_NULL_HANDLE };
 		VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
 
-		void renderNode(vkglTF::Node* node, VkCommandBuffer commandBuffer);
+		void renderNode(const vkglTF::Node* node, const VkCommandBuffer commandBuffer);
 
 		void loadAssets(const std::string& FilePath);
 		void prepareUniformBuffers();
@@ -66,7 +67,7 @@ namespace Voortman3D {
 		void OpenFileDialog();
 
 		void OnUpdateUIOverlay(UIOverlay* uioverlay) override;
-		void prepare()			                         override;
+		void prepare()			                     override;
 		void GetEnabledFeatures()                    override;
 		void render()                                override;
 	};

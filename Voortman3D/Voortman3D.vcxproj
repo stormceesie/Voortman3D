@@ -139,6 +139,8 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <OmitFramePointers>true</OmitFramePointers>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -147,6 +149,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Git\Voortman3D\Dependencies\TwinCAT;C:\Git\Voortman3D\Dependencies\vulkan;C:\Git\Voortman3D\x64\Release</AdditionalLibraryDirectories>
       <AdditionalDependencies>Voortman3DCore.lib;%(AdditionalDependencies);vulkan-1.lib;TcAdsDll.lib</AdditionalDependencies>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <ResourceCompile>
       <SuppressStartupBanner>false</SuppressStartupBanner>
