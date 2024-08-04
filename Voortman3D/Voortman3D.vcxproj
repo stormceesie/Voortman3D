@@ -104,14 +104,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\TwinCAT\AdsApi\TcAdsDll\Include;C:\Git\Voortman3D\Dependencies\ktx\lib;C:\Git\Voortman3D\Dependencies\ktx\include;C:\Git\Voortman3D\Dependencies\imgui;C:\Git\Voortman3D\Dependencies\tinygltf;C:\Git\Voortman3D\Dependencies\ktx\other_include;C:\Git\Voortman3D\Dependencies\glm;C:\VulkanSDK\1.3.275.0\Include;$(ProjectDir)..\Voortman3DCore</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Git\Voortman3D\Dependencies\TwinCAT;C:\Git\Voortman3D\Dependencies\ktx\lib;C:\Git\Voortman3D\Dependencies\ktx\include;C:\Git\Voortman3D\Dependencies\imgui;C:\Git\Voortman3D\Dependencies\tinygltf;C:\Git\Voortman3D\Dependencies\ktx\other_include;C:\Git\Voortman3D\Dependencies\glm;C:\VulkanSDK\1.3.275.0\Include;$(ProjectDir)..\Voortman3DCore;C:\Git\Voortman3D\Dependencies</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\TwinCAT\AdsApi\TcAdsDll\x64\lib;C:\VulkanSDK\1.3.275.0\Lib;C:\Git\Voortman3D\x64\Debug</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Git\Voortman3D\Dependencies\TwinCAT;C:\Git\Voortman3D\Dependencies\vulkan;C:\Git\Voortman3D\x64\Debug</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Voortman3DCore.lib;vulkan-1.lib;TcAdsDll.lib</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
@@ -132,19 +132,20 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>C:\Git\Voortman3D\Dependencies\TwinCAT;C:\Git\Voortman3D\Dependencies\ktx\lib;C:\Git\Voortman3D\Dependencies\ktx\include;C:\Git\Voortman3D\Dependencies\imgui;C:\Git\Voortman3D\Dependencies\tinygltf;C:\Git\Voortman3D\Dependencies\ktx\other_include;C:\Git\Voortman3D\Dependencies\glm;C:\VulkanSDK\1.3.275.0\Include;$(ProjectDir)..\Voortman3DCore\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Git\Voortman3D\Dependencies\TwinCAT;C:\Git\Voortman3D\Dependencies\ktx\lib;C:\Git\Voortman3D\Dependencies\ktx\include;C:\Git\Voortman3D\Dependencies\imgui;C:\Git\Voortman3D\Dependencies\tinygltf;C:\Git\Voortman3D\Dependencies\ktx\other_include;C:\Git\Voortman3D\Dependencies\glm;C:\VulkanSDK\1.3.275.0\Include;$(ProjectDir)..\Voortman3DCore\;%(AdditionalIncludeDirectories);C:\Git\Voortman3D\Dependencies</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
+      <OmitFramePointers>true</OmitFramePointers>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Git\Voortman3D\Dependencies\TwinCAT;C:\VulkanSDK\1.3.275.0\Lib;C:\Git\Voortman3D\x64\Release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Git\Voortman3D\Dependencies\TwinCAT;C:\Git\Voortman3D\Dependencies\vulkan;C:\Git\Voortman3D\x64\Release</AdditionalLibraryDirectories>
       <AdditionalDependencies>Voortman3DCore.lib;%(AdditionalDependencies);vulkan-1.lib;TcAdsDll.lib</AdditionalDependencies>
     </Link>
     <ResourceCompile>
@@ -173,7 +174,6 @@
     <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\Users\f.kegler\Downloads\VoortmanLogo (1).ico" />
     <Image Include="..\..\..\Users\Florent Kegler\Downloads\voortmanlogo (1).ico" />
   </ItemGroup>
   <ItemGroup>

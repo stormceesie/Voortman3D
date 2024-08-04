@@ -142,6 +142,10 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <AdditionalIncludeDirectories>C:\Git\Voortman3D\Dependencies\imgui;C:\Git\Voortman3D\Dependencies\tinygltf;C:\Git\Voortman3D\Dependencies\ktx\lib;C:\Git\Voortman3D\Dependencies\vulkan;C:\Git\Voortman3D\Dependencies\;C:\Git\Voortman3D\Dependencies\glm;C:\Git\Voortman3D\Dependencies\ktx\other_include;C:\Git\Voortman3D\Dependencies\ktx\include</AdditionalIncludeDirectories>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
     </ClCompile>
     <Link>
       <SubSystem>

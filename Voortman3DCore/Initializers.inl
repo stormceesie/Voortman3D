@@ -4,6 +4,10 @@
 #pragma once
 #include "pch.h"
 
+/// <summary>
+/// constexpr function will be executed (if possible) at compile time this can increase the speed of de code by many times!
+/// These functions should not be discarded compiler should give a warning in this case
+/// </summary>
 namespace Voortman3D {
 	namespace Initializers {
 		_NODISCARD constexpr VkMemoryAllocateInfo memoryAllocateInfo() noexcept

@@ -45,9 +45,6 @@
     <Image Include="..\..\..\Users\Florent Kegler\Downloads\voortmanlogo (1).ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="..\..\..\Users\f.kegler\Downloads\VoortmanLogo (1).ico">
-      <Filter>Resource Files</Filter>
-    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\model.frag.spv" />

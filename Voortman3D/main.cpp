@@ -38,8 +38,12 @@ namespace Voortman3D {
 			if (TCconnection)
 				delete TCconnection;
 
-			vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-			vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+			if (pipelineLayout) _LIKELY
+				vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+
+			if (descriptorSetLayout)
+				vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+
 			uniformBuffer.destroy();
 			conditionalBuffer.destroy();
 		}
@@ -93,7 +97,7 @@ namespace Voortman3D {
 
 	void Voortman3D::OpenFileDialog() {
 		OPENFILENAME ofn;
-		LPWSTR szFile = (LPWSTR)_alloca(260*sizeof(char));
+		LPWSTR szFile = (LPWSTR)_alloca(260*sizeof(wchar_t));
 
 		ZeroMemory(&ofn, sizeof(ofn));
 		ofn.lStructSize = sizeof(ofn);
@@ -371,7 +375,7 @@ namespace Voortman3D {
 
 	void Voortman3D::prepare() {
 		Voortman3DCore::prepare();
-		loadAssets("C:/Users/f.kegler/Documents/untitled.gltf");
+		loadAssets("C:/Git/Vulkan/assets/models/chinesedragon.gltf");
 		prepareConditionalRendering();
 		prepareUniformBuffers();
 		setupDescriptors();
