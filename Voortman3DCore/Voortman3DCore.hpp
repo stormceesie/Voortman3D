@@ -7,7 +7,6 @@
 #include "VulkanSwapChain.hpp"
 #include "Initializers.inl"
 #include "Camera.hpp"
-#include "VulkanTexture.h"
 #include "UIOverlay.hpp"
 
 namespace Voortman3D {

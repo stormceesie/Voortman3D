@@ -48,9 +48,6 @@
     <ClInclude Include="Camera.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="VulkanTexture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="keycodes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -87,27 +84,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VulkanSwapChain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="VulkanTexture.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Dependencies\ktx\lib\texture.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Dependencies\ktx\lib\memstream.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Dependencies\ktx\lib\swap.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Dependencies\ktx\lib\checkheader.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Dependencies\ktx\lib\filestream.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Dependencies\ktx\lib\hashlist.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VulkanglTFModel.cpp">
