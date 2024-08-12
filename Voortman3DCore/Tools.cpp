@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "pch.hpp"
 #include "Tools.hpp"
 #include "Initializers.inl"
 #include <concepts>
@@ -306,7 +306,11 @@ namespace Voortman3D {
 			{
 				size_t size = is.tellg();
 				is.seekg(0, std::ios::beg);
-				char* shaderCode = new char[size];
+				
+				// Shader modules are mostly small so use alloca because it is faster
+#pragma warning(disable:6255)
+				char* shaderCode = (char*)_alloca(size);
+#pragma warning(default:6255)
 				is.read(shaderCode, size);
 				is.close();
 
@@ -319,8 +323,6 @@ namespace Voortman3D {
 				moduleCreateInfo.pCode = (uint32_t*)shaderCode;
 
 				VK_CHECK_RESULT(vkCreateShaderModule(device, &moduleCreateInfo, NULL, &shaderModule));
-
-				delete[] shaderCode;
 
 				return shaderModule;
 			}

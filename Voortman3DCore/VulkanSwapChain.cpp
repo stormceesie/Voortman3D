@@ -1,6 +1,6 @@
 // Code is derived from Sascha Willems licensed under MIT license
 
-#include "pch.h"
+#include "pch.hpp"
 #include "VulkanSwapChain.hpp"
 
 namespace Voortman3D {

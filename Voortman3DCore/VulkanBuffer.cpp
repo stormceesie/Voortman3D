@@ -8,7 +8,7 @@
 * This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
 */
 
-#include "pch.h"
+#include "pch.hpp"
 #include "VulkanBuffer.hpp"
 
 namespace Voortman3D {

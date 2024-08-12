@@ -1,5 +1,5 @@
 #pragma once
-#include "pch.h"
+#include "pch.hpp"
 
 namespace Voortman3D {
 	namespace Debug

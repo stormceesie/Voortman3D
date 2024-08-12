@@ -1,7 +1,7 @@
 // Voortman3DCore.cpp : Defines the functions for the static library.
 //
 
-#include "pch.h"
+#include "pch.hpp"
 #include "framework.h"
 #include "Voortman3DCore.hpp"
 #include "keycodes.hpp"

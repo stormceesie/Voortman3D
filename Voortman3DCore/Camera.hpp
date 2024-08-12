@@ -10,7 +10,7 @@
 
 // This class is based of Sacha Willems - Florent Kegler
 
-#include "pch.h"
+#include "pch.hpp"
 
 namespace Voortman3D {
 	class Camera

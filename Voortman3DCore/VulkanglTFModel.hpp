@@ -9,7 +9,7 @@
 // GLTF loader based of Sacha Willems examples - Florent Kegler
 
 #pragma once
-#include "pch.h"
+#include "pch.hpp"
 
 #include "VulkanDevice.hpp"
 #include "Initializers.inl"
@@ -154,11 +154,12 @@ namespace Voortman3D {
 			static std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;
 			static VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo;
 
-			_NODISCARD static VkVertexInputBindingDescription inputBindingDescription(uint32_t binding);
-			_NODISCARD static VkVertexInputAttributeDescription inputAttributeDescription(uint32_t binding, uint32_t location, VertexComponent component);
-			_NODISCARD static std::vector<VkVertexInputAttributeDescription> inputAttributeDescriptions(uint32_t binding, const std::vector<VertexComponent> components);
+			_NODISCARD static constexpr VkVertexInputBindingDescription inputBindingDescription(uint32_t binding) noexcept;
+			_NODISCARD static constexpr VkVertexInputAttributeDescription inputAttributeDescription(uint32_t binding, uint32_t location, VertexComponent component) noexcept;
+			_NODISCARD static constexpr std::vector<VkVertexInputAttributeDescription> inputAttributeDescriptions(uint32_t binding, const std::vector<VertexComponent>& components) noexcept;
+
 			/** @brief Returns the default pipeline vertex input state create info structure for the requested vertex components */
-			_NODISCARD static VkPipelineVertexInputStateCreateInfo* getPipelineVertexInputState(const std::vector<VertexComponent> components);
+			_NODISCARD static VkPipelineVertexInputStateCreateInfo* getPipelineVertexInputState(const std::vector<VertexComponent>& components) noexcept;
 		};
 
 		enum FileLoadingFlags {

@@ -97,7 +97,11 @@ namespace Voortman3D {
 
 	void Voortman3D::OpenFileDialog() {
 		OPENFILENAME ofn;
+
+		// 520 bytes and short time usage use alloca instead of malloc or new
+#pragma warning(disable:6255)
 		LPWSTR szFile = (LPWSTR)_alloca(260*sizeof(wchar_t));
+#pragma warning(default:6255)
 
 		ZeroMemory(&ofn, sizeof(ofn));
 		ofn.lStructSize = sizeof(ofn);

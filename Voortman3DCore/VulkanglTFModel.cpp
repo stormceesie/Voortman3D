@@ -129,16 +129,15 @@ namespace Voortman3D {
 	/*
 		glTF default vertex layout with easy Vulkan mapping functions
 	*/
-
 	VkVertexInputBindingDescription vkglTF::Vertex::vertexInputBindingDescription;
 	std::vector<VkVertexInputAttributeDescription> vkglTF::Vertex::vertexInputAttributeDescriptions;
 	VkPipelineVertexInputStateCreateInfo vkglTF::Vertex::pipelineVertexInputStateCreateInfo;
 
-	VkVertexInputBindingDescription vkglTF::Vertex::inputBindingDescription(uint32_t binding) {
+	constexpr VkVertexInputBindingDescription vkglTF::Vertex::inputBindingDescription(uint32_t binding) noexcept {
 		return VkVertexInputBindingDescription({ binding, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX });
 	}
 
-	VkVertexInputAttributeDescription vkglTF::Vertex::inputAttributeDescription(uint32_t binding, uint32_t location, VertexComponent component) {
+	constexpr VkVertexInputAttributeDescription vkglTF::Vertex::inputAttributeDescription(uint32_t binding, uint32_t location, VertexComponent component) noexcept {
 		switch (component) {
 		case VertexComponent::Position: _LIKELY
 			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos) });
@@ -151,7 +150,7 @@ namespace Voortman3D {
 		}
 	}
 
-	std::vector<VkVertexInputAttributeDescription> vkglTF::Vertex::inputAttributeDescriptions(uint32_t binding, const std::vector<VertexComponent> components) {
+	constexpr std::vector<VkVertexInputAttributeDescription> vkglTF::Vertex::inputAttributeDescriptions(uint32_t binding, const std::vector<VertexComponent>& components) noexcept {
 		std::vector<VkVertexInputAttributeDescription> result;
 		uint32_t location = 0;
 		for (VertexComponent component : components) _LIKELY {
@@ -162,7 +161,7 @@ namespace Voortman3D {
 	}
 
 	/** @brief Returns the default pipeline vertex input state create info structure for the requested vertex components */
-	VkPipelineVertexInputStateCreateInfo* vkglTF::Vertex::getPipelineVertexInputState(const std::vector<VertexComponent> components) {
+	VkPipelineVertexInputStateCreateInfo* vkglTF::Vertex::getPipelineVertexInputState(const std::vector<VertexComponent>& components) noexcept{
 		vertexInputBindingDescription = Vertex::inputBindingDescription(0);
 		Vertex::vertexInputAttributeDescriptions = Vertex::inputAttributeDescriptions(0, components);
 		pipelineVertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

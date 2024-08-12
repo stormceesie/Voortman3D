@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "pch.hpp"
 #include "Debug.hpp"
 
 namespace Voortman3D {

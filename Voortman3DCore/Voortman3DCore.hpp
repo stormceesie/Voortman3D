@@ -1,5 +1,5 @@
 #pragma once
-#include "pch.h"
+#include "pch.hpp"
 #include "Window.hpp"
 #include "Debug.hpp"
 #include "Tools.hpp"
