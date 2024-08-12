@@ -118,14 +118,22 @@ namespace Voortman3D {
 			std::vector<Node*> children;
 			
 			// Orientation matrix of node
-			glm::mat4 matrix;
+			glm::mat4 matrix = glm::mat4(1.0f);
 			std::string name;
 			Mesh* mesh;
-			glm::vec3 translation{};
-			glm::vec3 scale{ 1.0f };
-			glm::quat rotation{};
 
-			_NODISCARD inline glm::mat4 localMatrix();
+			inline void Translate(glm::vec3 translation) {
+				matrix = glm::translate(matrix, translation);
+			}
+
+			inline void Rotate(glm::quat rotation) {
+				matrix = matrix * glm::mat4_cast(rotation);
+			}
+
+			inline void Scale(glm::vec3 scale) {
+				matrix = glm::scale(matrix, scale);
+			}
+
 			_NODISCARD inline glm::mat4 getMatrix();
 			void update();
 			~Node();

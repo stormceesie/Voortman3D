@@ -95,23 +95,14 @@ namespace Voortman3D {
 		}
 	}
 
-	/*
-		glTF node
-	*/
-	glm::mat4 vkglTF::Node::localMatrix() {
-		return glm::translate(glm::mat4(1.0f), translation) * glm::mat4(rotation) * glm::scale(glm::mat4(1.0f), scale) * matrix;
-	}
-
 	// Multiply yourself with your parent till there is no parent anymore
 	// This will result in the orientation matrix in the world where this node needs to be
 	glm::mat4 vkglTF::Node::getMatrix() {
-		glm::mat4 m = localMatrix();
-
 		// Use _LIKELY [[likely]] or _UNLIKELY [[unlikely]] as often as possible as it helps the compiler to optimize code
 		if (parent) _LIKELY // Most objects are going to have a parent
-			return m * parent->getMatrix();
-		else
-			return m;
+			return this->matrix * parent->getMatrix();
+
+		return this->matrix;
 	}
 
 	void vkglTF::Node::update() {
@@ -233,8 +224,7 @@ namespace Voortman3D {
 
 	void vkglTF::Model::loadNode(vkglTF::Node* parent, const tinygltf::Node& node, uint32_t nodeIndex, const tinygltf::Model& model, std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer, float globalscale)
 	{
-		vkglTF::Node* newNode = new(std::nothrow) Node;
-		assert(newNode != nullptr); // Check if allocation was succesfull exceptions will not be catched so dont throw
+		vkglTF::Node* newNode = new Node;
 
 		newNode->index = nodeIndex;
 		newNode->parent = parent;
@@ -242,17 +232,20 @@ namespace Voortman3D {
 		newNode->matrix = glm::mat4(1.0f);
 
 		if (node.translation.size() == 3) {
-			newNode->translation = glm::make_vec3(node.translation.data());
+			newNode->Translate(glm::make_vec3(node.translation.data()));
 		}
+
 		if (node.rotation.size() == 4) {
 			glm::quat q = glm::make_quat(node.rotation.data());
-			newNode->rotation = glm::mat4(q);
+			newNode->Rotate(q);
 		}
+
 		if (node.scale.size() == 3) {
-			newNode->scale = glm::make_vec3(node.scale.data());
+			newNode->Scale(glm::make_vec3(node.scale.data()));
 		}
+
 		if (node.matrix.size() == 16) {
-			newNode->matrix = glm::make_mat4x4(node.matrix.data());
+			newNode->matrix = glm::make_mat4x4((float*)node.matrix.data()) * newNode->matrix;
 		};
 
 		// Node with children

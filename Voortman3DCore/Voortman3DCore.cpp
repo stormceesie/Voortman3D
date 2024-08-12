@@ -601,6 +601,8 @@ namespace Voortman3D {
 		if (settings.overlay) {
 			uiOverlay.device = vulkanDevice;
 			uiOverlay.queue = queue;
+
+			// Dependency is now on some external .spv files this should be included in the .rc file
 			uiOverlay.shaders = {
 				loadShader("C:/Git/Voortman3D/Voortman3DCore/Shaders/uioverlay.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
 				loadShader("C:/Git/Voortman3D/Voortman3DCore/Shaders/uioverlay.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
