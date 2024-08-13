@@ -148,7 +148,7 @@ namespace Voortman3D {
 		struct Vertex {
 			glm::vec3 pos;
 			glm::vec3 normal;
-			glm::vec4 color; // Vec4 because of alpha channel
+			glm::vec3 color;
 
 			static VkVertexInputBindingDescription vertexInputBindingDescription;
 			static std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;

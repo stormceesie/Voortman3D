@@ -144,7 +144,7 @@ namespace Voortman3D {
 		case VertexComponent::Normal: _LIKELY
 			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal) });
 		case VertexComponent::Color: _LIKELY
-			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, color) });
+			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color) });
 		default: _UNLIKELY
 			return VkVertexInputAttributeDescription({});
 		}

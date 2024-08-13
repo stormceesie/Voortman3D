@@ -267,7 +267,7 @@ namespace Voortman3D {
 	}
 
 	void Voortman3D::buildCommandBuffers() {
-		constexpr VkCommandBufferBeginInfo cmdBufInfo = Initializers::commandBufferBeginInfo();
+		static constexpr VkCommandBufferBeginInfo cmdBufInfo = Initializers::commandBufferBeginInfo();
 
 		VkClearValue clearValues[2];
 		clearValues[0].color = backgroundColor;
