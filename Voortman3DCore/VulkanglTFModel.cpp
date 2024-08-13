@@ -143,8 +143,6 @@ namespace Voortman3D {
 			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos) });
 		case VertexComponent::Normal: _LIKELY
 			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal) });
-		case VertexComponent::Color: _LIKELY
-			return VkVertexInputAttributeDescription({ location, binding, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color) });
 		default: _UNLIKELY
 			return VkVertexInputAttributeDescription({});
 		}
@@ -189,7 +187,7 @@ namespace Voortman3D {
 		if (indices.memory)
 			vkFreeMemory(device->logicalDevice, indices.memory, nullptr);
 
-		for (auto node : nodes) _LIKELY {
+		for (auto node : nodes) _LIKELY{
 			delete node;
 		}
 
@@ -306,17 +304,6 @@ namespace Voortman3D {
 						Vertex vert{};
 						vert.pos = glm::vec4(glm::make_vec3(&bufferPos[v * 3]), 1.0f);
 						vert.normal = glm::normalize(glm::vec3(bufferNormals ? glm::make_vec3(&bufferNormals[v * 3]) : glm::vec3(0.0f)));
-						if (bufferColors) {
-							switch (numColorComponents) {
-							case 3:
-								vert.color = glm::vec4(glm::make_vec3(&bufferColors[v * 3]), 1.0f);
-							case 4:
-								vert.color = glm::make_vec4(&bufferColors[v * 4]);
-							}
-						}
-						else {
-							vert.color = glm::vec4(1.0f);
-						}
 						vertexBuffer.push_back(vert);
 					}
 				}
@@ -346,7 +333,7 @@ namespace Voortman3D {
 						return;
 					}
 				}
-				Primitive* newPrimitive = new Primitive(indexStart, indexCount, primitive.material > -1 ? materials[primitive.material] : materials.back());
+				Primitive* newPrimitive = new Primitive(indexStart, indexCount, primitive.material > -1 ? &materials[primitive.material] : &materials.back());
 
 				newPrimitive->firstVertex = vertexStart;
 				newPrimitive->vertexCount = vertexCount;
@@ -581,6 +568,18 @@ namespace Voortman3D {
 		}
 	}
 
+	void vkglTF::Texture::destroy()
+	{
+		if (device)
+		{
+			vkDestroyImageView(device->logicalDevice, view, nullptr);
+			vkDestroyImage(device->logicalDevice, image, nullptr);
+			vkFreeMemory(device->logicalDevice, deviceMemory, nullptr);
+			vkDestroySampler(device->logicalDevice, sampler, nullptr);
+		}
+	}
+
+
 	void vkglTF::Model::bindBuffers(VkCommandBuffer commandBuffer)
 	{
 		const VkDeviceSize offsets[1] = { 0 };
@@ -594,7 +593,7 @@ namespace Voortman3D {
 		if (node->mesh) {
 			for (Primitive* primitive : node->mesh->primitives) {
 				if (renderFlags & RenderFlags::BindImages) {
-					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, bindImageSet, 1, &primitive->material.descriptorSet, 0, nullptr);
+					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, bindImageSet, 1, &primitive->material->descriptorSet, 0, nullptr);
 				}
 				vkCmdDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, 0, 0);
 			}

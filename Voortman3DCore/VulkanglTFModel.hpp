@@ -45,8 +45,9 @@ namespace Voortman3D {
 			VkDescriptorImageInfo descriptor;
 			VkSampler sampler{VK_NULL_HANDLE};
 			uint32_t index{};
-			void updateDescriptor();
 			void destroy();
+
+			~Texture() { destroy(); }
 		};
 		/*
 			glTF material class
@@ -60,6 +61,9 @@ namespace Voortman3D {
 			VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
 
 			Material(VulkanDevice* device) : device(device) {};
+
+			~Material() { delete baseColorTexture; }
+
 			void createDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout, uint32_t descriptorBindingFlags);
 		};
 
@@ -71,7 +75,7 @@ namespace Voortman3D {
 			uint32_t indexCount;
 			uint32_t firstVertex{};
 			uint32_t vertexCount{};
-			Material& material;
+			Material* material;
 
 			struct Dimensions {
 				glm::vec3 min = glm::vec3(FLT_MAX);
@@ -82,7 +86,7 @@ namespace Voortman3D {
 			} dimensions{};
 
 			void setDimensions(glm::vec3 min, glm::vec3 max);
-			Primitive(uint32_t firstIndex, uint32_t indexCount, Material& material) : firstIndex(firstIndex), indexCount(indexCount), material(material) {};
+			Primitive(uint32_t firstIndex, uint32_t indexCount, Material* material) : firstIndex(firstIndex), indexCount(indexCount), material(material) {};
 		};
 
 		/*
@@ -142,13 +146,13 @@ namespace Voortman3D {
 		/*
 			glTF default vertex layout with easy Vulkan mapping functions
 		*/
-		enum class VertexComponent { Position, Normal, Color};
+		enum class VertexComponent { Position, Normal};
 
 		// GLTF supports more but these are the only things we use...
 		struct Vertex {
+			// Vertex colors are not used only basematerial color is used
 			glm::vec3 pos;
 			glm::vec3 normal;
-			glm::vec3 color;
 
 			static VkVertexInputBindingDescription vertexInputBindingDescription;
 			static std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;
