@@ -36,7 +36,7 @@ namespace Voortman3D {
 		} uniformData{};
 		Buffer uniformBuffer{};
 
-		std::vector<int32_t> conditionalVisibility{};
+		std::vector<VkBool32> conditionalVisibility{};
 		Buffer conditionalBuffer{};
 
 		VkPipelineLayout pipelineLayout{ VK_NULL_HANDLE };
@@ -50,6 +50,8 @@ namespace Voortman3D {
 		
 		VkDescriptorSetLayout descriptorSetLayout{ VK_NULL_HANDLE };
 		VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
+
+		void RenderChildNodesInUI(vkglTF::Node* node);
 
 		void renderNode(const vkglTF::Node* node, const VkCommandBuffer commandBuffer);
 

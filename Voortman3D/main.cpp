@@ -83,15 +83,32 @@ namespace Voortman3D {
 			ImGui::NewLine();
 
 			ImGui::BeginChild("InnerRegion", ImVec2(200.0f * uioverlay->scale, 400.0f * uioverlay->scale), false);
-			for (auto node : scene.linearNodes) {
-				// Add visibility toggle checkboxes for all model nodes with a mesh
-				if (node->mesh) {
-					if (uioverlay->checkBox(("[" + std::to_string(node->index) + "] " + node->mesh->name).c_str(), &conditionalVisibility[node->index])) {
-						updateConditionalBuffer();
-					}
-				}
+
+			// Itereer door de knooppunten en creëer een boomstructuur
+			for (auto node : scene.nodes) {
+				RenderChildNodesInUI(node);
 			}
+
 			ImGui::EndChild();
+		}
+	}
+
+	void Voortman3D::RenderChildNodesInUI(vkglTF::Node* node) {
+		bool isOpen = ImGui::TreeNodeEx(("[" + std::to_string(node->index) + "]").c_str(), ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_NavLeftJumpsBackHere);
+
+		// Voeg een checkbox toe binnen de boomknop
+		bool visibility = conditionalVisibility[node->index];
+		if (ImGui::Checkbox("Visible", (bool*)&visibility)) {
+			conditionalVisibility[node->index] = visibility;
+			updateConditionalBuffer();
+		}
+
+		// Als de node is geopend, render dan zijn kinderen
+		if (isOpen) {
+			for (auto childNode : node->children) {
+				RenderChildNodesInUI(childNode); // Recursieve oproep om kinderen te renderen
+			}
+			ImGui::TreePop(); // Sluit de huidige boomknop
 		}
 	}
 
@@ -319,6 +336,8 @@ namespace Voortman3D {
 
 	void Voortman3D::prepareConditionalRendering()
 	{
+		if (scene.linearNodes.size() == 0) return; // there are no nodes loaded
+
 		/*
 			The conditional rendering functions are part of an extension so they have to be loaded manually
 		*/
@@ -343,8 +362,9 @@ namespace Voortman3D {
 			VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			&conditionalBuffer,
-			sizeof(int32_t) * conditionalVisibility.size(),
-			conditionalVisibility.data()));
+			sizeof(VkBool32) * conditionalVisibility.size(),
+			&conditionalVisibility[0]));
+
 		VK_CHECK_RESULT(conditionalBuffer.map());
 
 		// By default, all parts of the glTF are visible
@@ -359,7 +379,7 @@ namespace Voortman3D {
 	}
 
 	void Voortman3D::updateConditionalBuffer() {
-		memcpy(conditionalBuffer.mapped, conditionalVisibility.data(), sizeof(int32_t) * conditionalVisibility.size());
+		memcpy(conditionalBuffer.mapped, &conditionalVisibility[0], sizeof(VkBool32) * conditionalVisibility.size());
 	}
 
 	void Voortman3D::updateUniformBuffers()
@@ -394,7 +414,6 @@ namespace Voortman3D {
 		preparePipelines();
 		buildCommandBuffers();
 		TwinCATPreperation();
-
 		prepared = true;
 	}
 

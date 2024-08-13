@@ -124,7 +124,7 @@ namespace Voortman3D {
 			// Orientation matrix of node
 			glm::mat4 matrix = glm::mat4(1.0f);
 			std::string name;
-			Mesh* mesh;
+			Mesh* mesh{nullptr};
 
 			inline void Translate(glm::vec3 translation) {
 				matrix = glm::translate(matrix, translation);
