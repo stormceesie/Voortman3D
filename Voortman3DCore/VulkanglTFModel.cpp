@@ -209,14 +209,41 @@ namespace Voortman3D {
 		const tinygltf::Accessor& accessor,
 		uint32_t vertexStart) {
 
-#pragma warning(disable : 6255) // Ignore stack overflow warning (this can happen but we are just going to ignore this because this is faster)
-		T* buf = (T*)_alloca(sizeof(T) * accessor.count); // Use alloca because it is very much faster than new or malloc as it is stack allocation. the memory will be destroyed at the end of the function
+		constexpr size_t kMaxStackAllocSize = 8192; // Define a reasonable maximum stack allocation size
+
+		size_t numElements = accessor.count;
+		size_t elementSize = sizeof(T);
+		size_t allocSize = numElements * elementSize;
+
+		// Determine if allocation size exceeds the maximum stack allocation size
+		T* buf = nullptr;
+		if (allocSize <= kMaxStackAllocSize) {
+			// Allocate on stack
+#pragma warning(disable : 6255) // Ignore stack overflow warning
+			buf = (T*)_alloca(allocSize);
 #pragma warning(default : 6255)
+		}
+		else {
+			// Allocate on heap
+			buf = (T*)malloc(allocSize);
+			if (!buf) {
+				throw std::bad_alloc(); // Handle malloc failure
+			}
+		}
 
-		memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(T));
+		// Copy data into buffer
+		memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], allocSize);
 
-		for (size_t index = 0; index < accessor.count; index++) _LIKELY
-			indexBuffer.push_back(buf[index] + vertexStart);
+		// Process data
+		for (size_t index = 0; index < numElements; ++index) {
+			_LIKELY
+				indexBuffer.push_back(buf[index] + vertexStart);
+		}
+
+		// Free heap-allocated memory if necessary
+		if (allocSize > kMaxStackAllocSize) {
+			free(buf);
+		}
 	}
 
 	void vkglTF::Model::loadNode(vkglTF::Node* parent, const tinygltf::Node& node, uint32_t nodeIndex, const tinygltf::Model& model, std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer, float globalscale)
