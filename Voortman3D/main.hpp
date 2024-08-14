@@ -59,7 +59,6 @@ namespace Voortman3D {
 		void prepareUniformBuffers();
 		void setupDescriptors();
 		void preparePipelines();
-		void buildCommandBuffers();
 		void updateUniformBuffers();
 		void renderFrame();
 		void updateConditionalBuffer();
@@ -68,8 +67,9 @@ namespace Voortman3D {
 		void draw();
 		void OpenFileDialog();
 
+		void buildCommandBuffers()                   override;
 		void OnUpdateUIOverlay(UIOverlay* uioverlay) override;
-		void prepare()			                     override;
+		void prepare()                               override;
 		void GetEnabledFeatures()                    override;
 		void render()                                override;
 	};

@@ -75,9 +75,12 @@ namespace Voortman3D {
 			}
 
 			// Read 10 times per second
-//			if (std::chrono::high_resolution_clock::now() - lastPLCRead >= std::chrono::milliseconds(100))
-//				TCconnection->ReadValue<float>(randomVariableKey, &sawHeight);
-			
+			std::chrono::time_point now = std::chrono::high_resolution_clock::now();
+			if (now - lastPLCRead >= std::chrono::milliseconds(100)) {
+				TCconnection->ReadValue<float>(randomVariableKey, &sawHeight);
+				lastPLCRead = now;
+			}
+		
 			uioverlay->inputFloat("Saw Height", &sawHeight);
 
 			ImGui::NewLine();
@@ -93,6 +96,7 @@ namespace Voortman3D {
 		}
 	}
 
+
 	void Voortman3D::RenderChildNodesInUI(vkglTF::Node* node) {
 		bool isOpen = ImGui::TreeNodeEx(("[" + std::to_string(node->index) + "]").c_str(), ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_NavLeftJumpsBackHere);
 
@@ -101,6 +105,38 @@ namespace Voortman3D {
 		if (ImGui::Checkbox("Visible", (bool*)&visibility)) {
 			conditionalVisibility[node->index] = visibility;
 			updateConditionalBuffer();
+		}
+
+		// Variables for string input and edit state
+		static char inputBuffer[256] = ""; // Assuming a max length of 256 for the input
+		static bool isEditing = false;
+		static vkglTF::Node* editingNode = nullptr;
+
+		if (isEditing && editingNode == node) {
+			uiOverlay.inputString("ADS Link", inputBuffer, IM_ARRAYSIZE(inputBuffer));
+
+			if (ImGui::Button("OK")) {
+				// Process the input
+				std::string inputString = inputBuffer;
+				// Example: node->adsLink = inputString;
+
+				isEditing = false; // Close the input field
+				editingNode = nullptr;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel")) {
+				isEditing = false; // Close the input field
+				editingNode = nullptr;
+			}
+		}
+		else {
+			// Add button to open the input field
+			if (ImGui::Button("Edit ADS link")) {
+				isEditing = true;
+				editingNode = node;
+				// Pre-fill the input buffer with the current ADS link value if needed
+				// strcpy(inputBuffer, node->adsLink.c_str());
+			}
 		}
 
 		// Als de node is geopend, render dan zijn kinderen
@@ -258,22 +294,30 @@ namespace Voortman3D {
 		const HRSRC FragmentResource = FindResource(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDR_MODEL_FRAGMENT), L"Shader");
 		const HRSRC VertexResource = FindResource(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDR_MODEL_VERTEX), L"Shader");
 
+		// Check if resource is loaded correctly (nullptr)
+		assert(FragmentResource);
+		assert(VertexResource);
+
+		// Ignore warning because the HRSRC is asserted this way the fragment data will never be 0 here
+#pragma warning(disable:6387)
 		const HGLOBAL fragmentData = LoadResource(GetModuleHandle(nullptr), FragmentResource);
 		const HGLOBAL vertexData = LoadResource(GetModuleHandle(nullptr), VertexResource);
 
 		const size_t fragmentDataSize = SizeofResource(GetModuleHandle(nullptr), FragmentResource);
 		const size_t VertexDataSize = SizeofResource(GetModuleHandle(nullptr), VertexResource);
 
+		// LockResource will result in a void* which can be used to load the binary .spv file which is required for our shader
 		const std::array<VkPipelineShaderStageCreateInfo, 2> shaderStagesRender = {
 			loadShader(VK_SHADER_STAGE_FRAGMENT_BIT, LockResource(fragmentData), fragmentDataSize),
 			loadShader(VK_SHADER_STAGE_VERTEX_BIT, LockResource(vertexData), VertexDataSize)
 		};
+#pragma warning(default:6387)
 
 		pipelineCI.stageCount = static_cast<uint32_t>(shaderStagesRender.size());
 		pipelineCI.pStages = shaderStagesRender.data();
-
 		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipelines.solid));
 
+		// Create WireFrame pipeline for vertex visualisation
 		rasterizationStateCI.polygonMode = VK_POLYGON_MODE_LINE;
 		pipelineCI.renderPass = renderPass;
 		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipelines.wireframe));
@@ -407,7 +451,7 @@ namespace Voortman3D {
 
 	void Voortman3D::prepare() {
 		Voortman3DCore::prepare();
-		loadAssets("C:/Git/Vulkan/assets/models/chinesedragon.gltf");
+		loadAssets("C:/Users/f.kegler/Documents/untitled.gltf");
 		prepareConditionalRendering();
 		prepareUniformBuffers();
 		setupDescriptors();

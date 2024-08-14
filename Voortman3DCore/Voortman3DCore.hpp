@@ -179,11 +179,10 @@ namespace Voortman3D {
 		virtual void setupRenderPass();
 		virtual void setupFrameBuffer();
 
-		virtual void render() = 0;
-
-		virtual void buildCommandBuffers() {};
-
-		virtual void OnUpdateUIOverlay(UIOverlay* uioverlay) {};
+		// Pure virtual functions (must be overriden)
+		virtual void render()                                = 0;
+		virtual void buildCommandBuffers()                   = 0;
+		virtual void OnUpdateUIOverlay(UIOverlay* uioverlay) = 0;
 
 		VkPipelineShaderStageCreateInfo loadShader(VkShaderStageFlagBits stage, void* hResourceData, size_t resourceSize);
 

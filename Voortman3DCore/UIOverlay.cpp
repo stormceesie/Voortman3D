@@ -480,4 +480,11 @@ namespace Voortman3D {
 			updated = true;
 		return result;
 	}
+
+	bool UIOverlay::inputString(const char* caption, char* buf, size_t bufsize) {
+		bool result = ImGui::InputText(caption, buf, bufsize);
+		if (result)
+			updated = true;
+		return result;
+	}
 }

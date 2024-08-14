@@ -43,9 +43,9 @@ namespace Voortman3D {
     ULONG VariableHandle;
 
 
-    char szVar[] = { "MachineObjectsArray.Saw.pZ1Axis^.fActualPosition" };
+    const char szVar[] = { "MachineObjectsArray.Saw.pZ1Axis^.fActualPosition" };
 
-    long nErr = AdsSyncReadWriteReq(&Addr, ADSIGRP_SYM_HNDBYNAME, 0x0, sizeof(VariableHandle), &VariableHandle, sizeof(szVar), szVar);
+    long nErr = AdsSyncReadWriteReq(&Addr, ADSIGRP_SYM_HNDBYNAME, 0x0, sizeof(VariableHandle), &VariableHandle, ARRAYSIZE(szVar), (char*)&szVar);
 
     if (!nErr) _LIKELY{ // If there is no error while getting the variable handle
       variableHandles.emplace(key, VariableHandle);
