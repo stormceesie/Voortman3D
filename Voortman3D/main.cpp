@@ -74,6 +74,11 @@ namespace Voortman3D {
 				OpenFileDialog();
 			}
 
+			float transform{};
+			if (uioverlay->sliderFloat("Model Height", &transform, -0.2f, 0.2f)) {
+				scene.linearNodes[0]->Translate(glm::vec3(.0f, .0f, transform));
+			}
+
 			// Read 10 times per second
 			std::chrono::time_point now = std::chrono::high_resolution_clock::now();
 			if (now - lastPLCRead >= std::chrono::milliseconds(100)) {
@@ -343,6 +348,12 @@ namespace Voortman3D {
 		renderPassBeginInfo.clearValueCount = 2;
 		renderPassBeginInfo.pClearValues = clearValues;
 
+		const std::array<VkWriteDescriptorSet, 1> writeDescriptorSets = {
+			Initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &uniformBuffer.descriptor)
+		};
+
+		vkUpdateDescriptorSets(device, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
+
 		for (int32_t i = 0; i < drawCmdBuffers.size(); ++i) {
 			renderPassBeginInfo.framebuffer = frameBuffers[i];
 
@@ -430,7 +441,7 @@ namespace Voortman3D {
 	{
 		uniformData.projection = camera.matrices.perspective;
 		uniformData.view = glm::scale(camera.matrices.view, glm::vec3(0.1f, -0.1f, 0.1f));
-		uniformData.model = glm::translate(glm::mat4(1.0f), scene.dimensions.min);
+		uniformData.model = scene.linearNodes[0]->getMatrix();
 		memcpy(uniformBuffer.mapped, &uniformData, sizeof(UniformData));
 	}
 
@@ -451,7 +462,7 @@ namespace Voortman3D {
 
 	void Voortman3D::prepare() {
 		Voortman3DCore::prepare();
-		loadAssets("C:/Users/f.kegler/Documents/untitled.gltf");
+		loadAssets("C:/Git/Voortman3D/Dependencies/chinesedragon.gltf");
 		prepareConditionalRendering();
 		prepareUniformBuffers();
 		setupDescriptors();
